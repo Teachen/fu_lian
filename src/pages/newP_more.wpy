@@ -1,0 +1,235 @@
+<template>
+    <view class="fz28 tc bgf" style="width: 92%;padding:15rpx 4%;" wx:for="{{NewP}}">
+      <view class="flex_s p_tb">
+        <span class="c333 fz30">
+          {{item.content}}
+        </span>
+        <span wx:if="{{is_user}}" bindtap ="handleDelItem" data-delid="{{item.id}}">
+          <image class="img15" src="https://api.fuliaoquan.com/public/images/v2/del.png"/> 
+        </span>
+      </view>
+      <view class="flex_f p_tb" bindtap="makePhoneCall" wx:if="{{!is_user}}" data-call ="{{item.tel}}" data-title="此为新品，查看大图细节，请联系上传人">
+        <span class="p_span55 p_span" wx:for="{{item.img}}">
+          <image class="img55" src="{{item}}"/>
+        </span>
+      </view>
+      <view class="flex_f p_tb" wx:if="{{is_user}}" data-call ="{{item.tel}}" data-imgurl = "{{item.img}}"  @tap = "privewImgUrl">
+        <span class="p_span55 p_span" wx:for="{{item.img}}">
+          <image class="img55" src="{{item}}" data-src="{{item}}" @tap="mag"/>
+        </span>
+      </view>
+      <view class="c666 fz24 tl p_tbb border_b">
+        {{item.pubdate}} 
+      </view>
+    </view>
+    <view class="c999 fz24 bottom_n" wx:if="{{showDone}}">
+      我们是有底线的~~
+    </view>
+
+    <view wx:if="{{showDel}}" class="backColor">               
+      <view class="DisGrey">
+          <view class="DelSure" bindtap="check_del({{del_id}},{{UID}})"> 确认删除 </view>         
+          <view class="UnSure" bindtap="cancel"> 取消 </view>
+      </view>     
+    </view>
+
+
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";                                  
+import tip from "@/utils/tip";
+import oPhone from "@/components/ophone";
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant'; 
+export default class Search_more extends wepy.page {
+  config = {
+    navigationBarTitleText: '新品',
+    navigationBarBackgroundColor: '#F2F2F2'                     
+  }  
+  data = {
+    UID:0,
+    //个人中心卡片是否在
+    NewP:{},
+    init:0,
+    optionId:0,
+    size:7,
+    ListP:[],
+    no_detail:0,
+    active:1,
+    //当前页面
+    currentPage: 1,
+    //总页数
+    page_total: 0,
+    is_user:false,
+    showDel:false,
+    del_id:0,
+    //是否显示 底部loading
+    showLoading: true,
+    //防止重复加载
+    preventRepeatReuqest: false,
+    showDone:false,
+    bindCallNum:0,
+    bindCallShow:false,
+    callTitle:"",
+    privewImgUrlList:"",
+    showReturn:true
+  }
+  components = { 
+    oPhone: oPhone 
+  }
+
+    async getNewList(uid,uid2,page) { 
+        let that = this;
+        const json = await api.GetNewList({ 
+          query: {
+            uid:uid,   
+            uid2:uid2,
+            page:page || 1,
+            size:7,
+            type:"list",
+            method:"POST"
+          }
+        });
+        console.log(json);
+        if(json.data.code == 200) {
+            this.NewP =[...that.NewP,...json.data.data.list];
+            that.page_total = json.data.data.total;
+
+        }else if(json.data.code == 201){
+            tip.error("数据加载失败");
+        } else {
+          tip.error(json.data.msg);
+        }
+        this.$apply();
+    }
+
+    async del_comfir() {
+
+      let that = this;
+      const json = await api.MyInvitationDel({
+        query: {
+          id: this.del_id,
+          uid:this.UID,
+          method:"POST"
+        }
+      });
+
+      if (json.data.code == 200) {
+        that.init = 1;
+        this.NewP=[];
+        this.onLoad();
+
+      } else {
+        tip.error(json.data.msg)
+      }
+      this.showDel = false;
+      that.showLoading = false;
+    }
+
+    async show(imgList){
+
+        let current = this.privewImgUrlList;     
+        
+        let imageArry = [];                                                                                                         
+        let obj = imgList;                 
+        Object.keys(obj).forEach((item) => {        
+          imageArry.push(obj[item])
+        });
+
+        wx.previewImage({
+          current: current, // 当前显示图片的http链接
+          urls: imageArry, // 需要预览的图片http链接列表
+        })
+    }
+  onLoad(option) {
+
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    this.UID =  sys_id.uid;
+    if(that.init == 0){
+      let uid2 = option.uid;
+      that.optionId = uid2;
+      that.init = 1;
+    }
+    
+    that.is_user = false;
+    if(that.UID == that.optionId){                    
+        that.is_user = true;
+    }else{
+      that.is_user = false;
+    } 
+    this.getNewList(this.UID,that.optionId);
+      
+    that.$apply();
+  }
+  //加载更多
+  onReachBottom() {
+    let that = this;
+    that.showLoading = true;
+    if(that.page_total <= that.currentPage){
+        that.showDone = true;
+    }
+
+    //判断总页数是否大于翻页数
+    if (that.page_total > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.currentPage++;
+      this.getNewList(this.UID,that.optionId,that.currentPage);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  };
+  onShow(){
+    
+    
+  }
+  computed = {
+
+  }
+  methods = {
+      mag(e){
+       this.privewImgUrlList = e.currentTarget.dataset.src;
+      },
+      privewImgUrl(e){
+        let imgList = e.currentTarget.dataset.imgurl;
+      
+        this.show(imgList);
+      },
+      makePhoneCall(e) {
+        let callNum = e.currentTarget.dataset.call;
+        this.callTitle = e.currentTarget.dataset.title;
+        this.bindCallNum = e.currentTarget.dataset.call;            
+        this.bindCallShow = true; 
+        this.$root.$apply();
+     },  
+     handleDelItem(e){
+      console.log(e)
+      this.del_id = e.currentTarget.dataset.delid;                       
+      this.showDel = true;
+
+    },
+    check_del(){
+        this.del_comfir();
+    },
+    cancel(){
+        this.showDel = false;
+    }
+  
+  }
+} 
+</script>
+<style lang="less">
+
+
+</style>
+

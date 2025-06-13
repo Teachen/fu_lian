@@ -1,0 +1,380 @@
+<template>
+    <view class="{{is_hasCar == 3?'':'result'}}" style="background-color:#fff;" wx:if="true">
+      <view class="s16" wx:if="{{is_hasCar == 1}}">
+          <view class="c333 fz32 tz">
+              帖子
+          </view>
+          <view wx:for="{{hasDetail}}" wx:key="{{invitation}}">
+            <view class="flex_s margin_tb">
+              <span class="top_name fz28 c666">
+                <image src="{{item.user.avatar}}" class="img25"/>
+               {{item.user.name}}
+              </span>
+              <span class="fz28 c666">
+                {{item.pubdate}}
+              </span>
+            </view>
+            <navigator url="/pages/postDetail" hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{item.id}}&uid={{UID}}">
+            <view class="fz30 c333 content">
+              
+              <text wx:for="{{item.content}}" wx:key="*this" class="{{item == keywords ? 'highlight' : 'normal' }}">{{item}}</text>
+            </view>
+            <view class="p_img">
+              <span class="p_span" wx:for="{{item.img}}" wx:for-item="tpitem" wx:key="{{tpitem}}">
+                  <image src="{{tpitem}}" class="img62"/>
+              </span>
+            </view>
+            </navigator>
+          </view>
+          <view class="c999 fz24 bottom_n" wx:if="{{showDone}}">
+            我们是有底线的~~
+          </view>
+      </view>
+      <view class="s17" wx:if="{{is_hasCar == 0}}">
+        <view class="c333 fz32 tz">
+          发帖者
+        </view>
+        <view wx:for="{{hasDetail}}" wx:key="{{user}}">
+          <navigator hover-class="none" url="/pages/avator?uid={{item.id}}">
+          <view class="flex_f m_p">
+              <image src="{{item.avatar}}" class="img44"/>
+              <span class="c333 fz28 topname1">
+                
+                <text wx:for="{{item.name}}" wx:key="*this" class="{{item == keywords ? 'highlight' : 'normal' }}">{{item}}</text>
+              </span>
+          </view>
+          </navigator>
+        </view>
+        <view class="c999 fz24 bottom_n" wx:if="{{showDone}}">
+            我们是有底线的~~
+          </view>
+      </view>
+
+      <view wx:if="{{is_hasCar == 3}}">
+        <view class="bgf9f9f9">
+          <view wx:for="{{hasDetail}}">
+            <navigator url="/pages/avator?a=1&uid={{item.uid}}" hover-class="none">  
+                <view  class = "cardcon cardshow">  
+                    <view class = "cardlt">
+                        <image src="{{item.logo}}"/> 
+                    </view>
+                    <view class = "cardtl">
+                        <view class = "cardh1">  <text wx:for="{{item.company}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text> </view>
+                        <text class="cardtxt">{{item.types}}</text> 
+                        <text class="cardtxt">{{item.products}}</text> 
+                    <view class = "txtrt"> <text wx:for="{{item.name}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text></view> 
+                    </view>
+                </view>
+            </navigator>
+          </view>
+        </view>
+        <view class="more_check p_tbb" style="margin-top: 28rpx;" wx:if="{{total.card > 3}}">
+         <navigator url="/pages/search_more?type=card&key={{search_k}}&uid={{UID}}" hover-class="none">
+            查看更多<image src="https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png"/>
+         </navigator>
+       </view>
+       <view class="S19" wx:if="{{total.card == 0}}">
+          <view class="c666 v1">暂时未找到相关信息~~</view>
+       </view>
+      </view>
+    </view>
+
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";                                  
+import tip from "@/utils/tip";
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant'; 
+export default class Search_more extends wepy.page {
+  config = {
+    navigationBarTitleText: '搜索结果',
+    navigationBarBackgroundColor: '#F2F2F2'                     
+  }  
+  data = {
+    UID:0,
+    //个人中心卡片是否在
+    is_hasCar:2,
+    hasDetail:{},
+    del_id:0,
+    init:0,
+    keywords:"",
+    type:"",
+    optionId:'',
+    size:7,
+    init_share:0,
+    is_share:2,
+    TZuser_id:0,
+    Comtent:'',
+    share:0,
+    ListP:[],
+    no_detail:0,
+    active:1,
+    //当前页面
+    currentPage: 1,
+    //总页数
+    page_total: 0,
+    //是否显示 底部loading
+    showLoading: true,
+    //防止重复加载
+    preventRepeatReuqest: false,
+    showDone:false,
+    showReturn:true
+  }
+  async getSearchList(uid,key,type,page){     
+    let that = this; 
+    const res = await api.Getlist_h1({   
+      query: {                                                                                                                            
+        uid: uid,
+        keywords:key,
+        type:type,
+        page:page || 1,
+        size:that.size,                             
+        method:"POST"                         
+      }
+    });
+    if (res.data.code == 200) {
+      let data = res.data.data;
+      that.page_total = data.total;
+      this.hasDetail =[...that.hasDetail,...data.list];
+      console.log(data);
+
+       
+     }
+    if(res.data.code == 201 ) {
+
+        
+    }                           
+      that.$apply();  
+    }
+  onLoad(option) {
+
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    this.UID =  sys_id.uid;
+    let keywords = option.key, type = option.type;
+    that.keywords = keywords;
+    that.type = type;
+    if(type == "invitation"){
+        that.is_hasCar = 1;
+    }else if(type == "card"){
+        that.is_hasCar = 3;
+    }else{
+        that.is_hasCar = 0;
+        that.size = 10;
+    }
+
+    this.getSearchList(this.UID,keywords,type);
+
+    console.log(keywords,type);
+
+    
+    
+    that.$apply();
+  }
+  //加载更多
+  onReachBottom() {
+    let that = this;
+    that.showLoading = true;
+    if(that.page_total <= that.currentPage){
+        that.showDone = true;
+    }
+
+    //判断总页数是否大于翻页数
+    if (that.page_total > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.currentPage++;
+      this.getSearchList(this.UID,that.keywords,that.type,that.currentPage);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  };
+  onShow(){
+    
+    
+  }
+  computed = {
+
+  }
+  methods = {
+    change(){
+      this.showReturn = false;
+    },
+    search(){
+      console.log(123);
+    }
+  }
+} 
+</script>
+<style lang="less">
+ .highlight {
+    color: #C7000B;
+  }
+  .normal {
+    color: #333;
+  }
+  page{
+    color:#333;
+  }
+  .topSearch{ 
+    padding:25rpx 4% 0 4%;
+    background-color:#F2F2F2;
+    position: fixed;
+    top:0;
+    right:0;
+  } 
+  .searchBox text {
+    color:#999;
+  }
+  
+  .searchBox input{
+    width:100%;
+    padding:5rpx 0 5rpx 12rpx;
+    border-radius: 5rpx;
+    height:60rpx;
+    color:#333;
+    box-sizing: border-box;
+  } 
+  .SearchList,.result{
+    width:92%;
+    margin:36rpx auto 0 auto;
+  } 
+  .result{
+    width:100%;
+  }
+  .s16,.s17{
+    width:92%;
+    margin:25rpx auto;
+  }
+  .gline{
+    height:18rpx;
+    background:#f9f9f9;
+  }
+  .S14{
+    margin:30rpx 0 60rpx 0;
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+
+  }
+  .S14 view{
+    font-size: 28rpx;
+    display:inline-block;
+    margin: 20rpx 35rpx 0 0;
+    padding:10rpx 10rpx;
+    border:1px solid #999;
+    width:16%;
+    border-radius: 5rpx;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 28rpx;
+  }
+
+  .S14 view:nth-child(5),
+  .S14 view:nth-child(10) {
+    margin-right: 0;
+  }
+  .S15{
+    margin:15rpx 0 25rpx 0;
+  }
+  .S15 view{
+    padding: 20rpx 0;
+    border-bottom: 1px solid #ccc;
+  }
+  .cellContent{
+    max-height:500rpx;
+    overflow:scroll;
+  }
+  .clear_history{
+    text-align: center;
+    line-height: 50rpx;
+    border:1px solid #ccc;
+    border-radius:10rpx;
+    margin:25rpx auto 0 auto;
+    width:65%;
+    padding:12rpx 30rpx;
+    font-size:24rpx;
+
+  }
+  .clear_history image,.more_check image{
+    display: inline-block;
+    width:35rpx;
+    height:35rpx;
+    vertical-align: middle;
+  }
+  .img25{
+    width:50rpx;
+    height:50rpx;
+    border-radius:5rpx;
+    margin-right: 12rpx;
+    vertical-align: middle;
+  }
+  .img62{
+    width:124rpx;
+    height:124rpx;
+     border-radius:8rpx;
+     margin-right: 10rpx;
+  }
+  .p_span{
+    width:124rpx;
+    height:124rpx;
+    display: inline-block;
+    background:url("https://api.fuliaoquan.com/public/images/defaultpic.png");
+    background-size: 124rpx 124rpx;
+    margin-right: 10rpx;
+  }
+  .img44{
+    width:88rpx;
+    height:88rpx;
+     border-radius:5rpx;
+     margin-right: 38rpx;
+     vertical-align: middle; 
+  }
+  .more_check navigator{
+    text-align: center;
+  }
+  .top_name,.content,.topname1 {
+    display: inline-block;
+    width:490rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+  }
+  .content{
+    width:100%;
+  }
+  .topname1{
+    width:300rpx;
+  }
+  .flex_f{
+    display: flex;
+    align-items: center;
+  }
+  .tz{
+    padding:0 0 25rpx 0;
+    border-bottom: 1px solid #E6E6E6;
+  }
+  .margin_tb{
+    margin:30rpx 0 20rpx 0;
+  }
+  .p_img{
+    padding:16rpx 0 30rpx 0;
+    border-bottom: 1px solid #E6E6E6;
+    margin-bottom: 24rpx;
+  }
+  .m_p{
+    padding:26rpx 0;
+    border-bottom: 1px solid #E6E6E6;
+  }
+
+</style>
+

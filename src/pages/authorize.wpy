@@ -1,0 +1,167 @@
+<template>
+  <view class="authorize-contianer">
+    <image class="authorize-icon" src="https://api.fuliaoquan.com/public/images/v2/logo.jpg"/> 
+    <view class="fz32 cf09" style="position: relative;top:-22rpx;">辅料圈</view>
+    <view class="auth-item" style="font-size: 45rpx;margin-top: 63rpx;">辅料人的交流圈</view>
+    <view class="btn-authorize">
+      <button open-type="getUserInfo" lang="zh_CN" class="btnShallow" hover-class="btnDeeper" bindgetuserinfo="onGotUserInfo">微信登录</button>  
+    </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import {
+  SYSTEM_INFO,
+  USER_SPECICAL_INFO,
+  USER_INFO,
+  USER_UID
+} from '@/utils/constant';
+export default class Authorize extends wepy.page {
+ 
+  config = {
+    navigationBarTitleText: '授权登录',
+  }
+  data = {
+    type_share:1,
+    uid:603
+  }
+  async onLoad(option) {
+   console.log(option)
+   this.uid = option.uid;
+   this.type_share = option.type_share; 
+   console.log(this.uid)
+   console.log(this.type_share)
+    let res = await wepy.getSetting()
+    console.log((res.authSetting)['scope.userInfo'])
+    if ((res.authSetting)['scope.userInfo']) {
+      let userInfo = wepy.getStorageSync(USER_INFO)
+      if (!userInfo.nickName) {
+        let data  = await wepy.getUserInfo()
+        if (data) {
+          wepy.setStorageSync(USER_INFO, data.userInfo)
+        }
+        let res = await wepy.login()
+        if (res.code) {
+          let systemInfo = wepy.getSystemInfoSync();
+          wepy.setStorageSync(SYSTEM_INFO, systemInfo);
+          let rlt = await api.wxJsCode2Session({
+            query: {
+              code: res.code,
+              method:"POST",
+              nickName: e.detail.userInfo.nickName
+            }
+          })                          
+          }
+        }
+        wepy.switchTab({
+          url: '/pages/home'                                                        
+        })
+      }
+      
+    }
+  
+  async onGotUserInfo(e) {
+     console.log(e);
+    if (e.detail.errMsg == 'getUserInfo:ok') {
+
+      let res = await wepy.login();
+      console.log(res);
+      if (res.code) {
+        wepy.setStorageSync(USER_INFO, e.detail.userInfo);
+        let systemInfo = wepy.getSystemInfoSync();
+        wepy.setStorageSync(SYSTEM_INFO, systemInfo);
+        
+        // 获取用户openid
+        let rlt = await api.wxJsCode2Session({
+          query: {
+            code: res.code,
+            method:"POST",
+            nickName: e.detail.userInfo.nickName
+          }
+        })
+        console.log(e.detail.userInfo);
+
+        // 存储数据入库用户信息
+        let user_save = await api.addUser({
+            query: {             
+               method:"POST",
+               avatar:e.detail.userInfo.avatarUrl,
+               country:e.detail.userInfo.country,
+               province:e.detail.userInfo.province,
+               city:e.detail.userInfo.city,
+               gender:e.detail.userInfo.gender,               
+               name: e.detail.userInfo.nickName,
+               openid:rlt.data.data.openid,
+               type:this.type_share,
+               uid:this.uid,
+               unionid:rlt.data.data.unionid
+            }
+          });
+        console.log(user_save);
+        wepy.setStorageSync(USER_UID, user_save.data.data); 
+        let userUid = wepy.getStorageSync(USER_UID);
+        console.log(userUid);
+        if (rlt.data) {
+          let data = rlt.data;                              
+          if (data.data.openid) {
+            wepy.setStorageSync(USER_SPECICAL_INFO, data.data);
+            let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO);
+            console.log(userSpecialInfo);          
+            wepy.switchTab({
+              url: '/pages/home'
+            })
+          }
+        } else {
+          let res = await wepy.showModal({
+            title: 'appid有误',
+            content: '授权失败'
+          })
+          if(res.confirm){
+            wepy.switchTab({
+              url: '/pages/home'
+            })
+          }
+        }
+
+      }
+    }else{
+      wepy.switchTab({
+        url: '/pages/home'
+      })
+    }
+  }
+  methods = {
+
+  }
+  events = {
+
+  }
+}
+</script>
+<style lang="less">
+page {
+  height: 100%;
+}
+
+.authorize-contianer {
+  height: 100%;
+  background: #fff;
+  text-align: center;
+  padding-top: 100rpx;
+  .authorize-icon {
+    width: 128rpx;
+    height: 128rpx;
+    display: block;
+    margin: 0 auto;
+    padding-bottom: 10rpx;
+  }
+  .auth-item {
+    padding: 5rpx 0;
+  }
+  .btn-authorize {
+   width:61%;
+  margin: 200rpx auto;
+  }
+}
+</style>

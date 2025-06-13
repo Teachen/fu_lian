@@ -1,0 +1,836 @@
+<template>
+   <form bindsubmit="bindFormSubmit"> 
+      <view class="cropper-wrapper" wx:if="{{uploadPage}}">
+        <cropper :options="cropperOpt"
+          @beforeImageLoad="bl"></cropper>                      
+        <view class="cropper-buttons">
+          <view
+            class="upload"
+            @tap="uploadTap"> 
+            重选图片
+          </view> 
+          <view
+            class="getCropperImage" 
+            @tap="getCropperImage"> 
+            确定  
+          </view>     
+        </view>
+      </view>
+     <view class=" cardlist" wx:if="{{!uploadPage}}">
+         <view class = "cardset">
+            <view class="cardset-Title"> 姓名  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>                                                                            
+            </view> 
+            <view  class="content"> 
+                <input placeholder="请输入您的姓名 （最多6个字）" type="text" focus="true"  bindblur = "setStoragename" maxlength="6" name='nickName1' value="{{name}}" placeholder-class="cardcontent" /> 
+            </view>      
+         </view>
+
+          <view class = "cardset" style="width:100%;" wx:if="{{is_mobile == 1}}">
+            <view class="cardset-Title"> 手机 
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>
+            </view>      
+            <view  class="content"   style="width:280rpx;">                                                        
+            <input name="phone" type="number" bindblur="setStoragephone "  
+            placeholder-class="cardcontent" value="{{Datamobile}}" disabled="true"  placeholder="请输入您的手机号码" maxlength="11" /> 
+            </view> 
+         </view> 
+
+         <view class = "cardset" style="width:58%;" wx:if="{{is_mobile == 0}}">
+            <view class="cardset-Title"> 手机 
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>  
+            </view> 
+            <view  class="content"   style="width:280rpx;">      
+            <input name="phone" type="number"  bindblur="setStoragephone" bindinput="phoneInput" placeholder-class="cardcontent" value="{{phone}}" placeholder="请输入您的手机号码" maxlength="11"/> 
+            </view>  
+         </view> 
+
+          <view class="btn send_code getmsg" wx:if="{{is_mobile == 0}}">                                                
+            <text wx:if="{{sendMsgDisabled}}">{{time+'秒后获取'}}</text>
+            <text @tap="sendCode" wx:else="{{sendMsgDisabled}}">发送验证码</text>                                                                                                                                   
+          </view>
+
+         <view class = "cardset" wx:if="{{is_mobile == 0}}"> 
+            <input placeholder="请输入验证码" bindblur = "setStorageverify" class="code" name="code" type="number" placeholder-class="cardcontent" value="{{vertify}}"  maxlength="6"/>
+         </view> 
+
+         <view class = "cardset">           
+            <view class="cardset-Title"> 职务   
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>  
+            </view> 
+
+            <input placeholder="请输入您的职务" type="text" bindblur = "setStoragework" maxlength="6" type="text" value="{{inwork}}"  name='position'  class="content" /> 
+         </view>
+
+         <view class = "cardset">
+            <view class="cardset-Title"> 公司  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/> 
+            </view>  
+            <view  class="content">  
+            <input placeholder="请输入您的公司名称 （最多16个字）" bindblur = "setStoragefirm" type="text" value="{{infirm}}" name='company'   maxlength="16"/> 
+            </view>   
+         </view>
+
+        <view class = "cardset">
+            <view class="cardset-Title"> 地址  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>
+            </view> 
+            <image class="cardmap" src = "https://api.fuliaoquan.com/public/images/v3/ico-maps.png"/> 
+            <view  class="content">   
+            <input placeholder="{{placeholder}}" value="{{address2}}" placeholder-style="color:#333;" disabled="true" name="address" bindtap="add" type="text" placeholder-class="cardcontent"/>
+            </view>   
+            <input  value="{{coordinates2}}"  class="none" type="hidden" bindchange="change" name="coordinates"/>  
+         </view>
+
+        <view class = "cardset" style="padding-bottom:0;">
+            <view class="cardset-Title" style="width:192rpx;"> 公司类型  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>
+            </view> 
+            <view class="pubUl">
+                <text wx:for="{{types}}" class="{{navindex==index? 'active' : ''}}" wx:key="" bindtap="pubswichNav" data-navindex="{{index}}" data-types="{{types[index]}}"> {{item}} </text> 
+           </view>
+        </view>
+
+        <view class = "cardset" style="padding-bottom:0;">
+            <view class="cardset-Title" style="width:192rpx;"> 主营产品  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>
+            </view> 
+            <view class="pubUl">
+                <text wx:for="{{products}}" class="{{navindex2==index? 'active' : ''}}" bindtap="pubswichNav2" data-navindex="{{index}}" data-products="{{products[index]}}"> {{item}} </text>
+           </view>
+        </view>
+        <view class = "cardset" wx:if="{{is_another}}">
+            <view class="cardset-Title"> 其他  
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/> 
+            </view>  
+            <input placeholder="请填写其他主营产品（最多4个字）"  bindblur= "setStorageanother" type="text" value="{{another}}" name='another'   maxlength="4" class="content"/> 
+         </view>
+
+        <view class = "cardset">
+            <view class="cardset-Title" style="width:700rpx; ">公司Logo <text class="content" style="width:382rpx; vertical-align: middle;">(请提供正式清晰的logo图片)</text></view>
+            <view class="addImages">  
+                <view class="content_add"  wx:if="{{logo != ''}}">                
+                    <view bindtap="delete" class="delete" data-inde="{{index}}">    
+                        <image class="ab" mode="aspectFill" src="https://api.fuliaoquan.com/public/images/v2/ico_del.png"/>                   
+                    </view> 
+                    <image class="add_img" data-index="{{index}}" mode="aspectFill" src="{{logo}}"/>     
+                </view>               
+                <view bindtap="uploadImg" class="content_add" wx:if="{{noUploadImg}}">            
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-addimg.png"/>                                                                   
+                </view>
+
+            </view> 
+        </view>
+
+        <view class = "cardset" type="primary" style="border-bottom:none;">
+            <view class="cardset-Title" style="width:700rpx;"> 公司简介 </view> 
+            <view  class="pubTextarea"> 
+                <textarea maxlength="300" placeholder="请输入您的公司简介"  name="content"                            
+                placeholder-class="pubarea" value="{{content}}" bindinput="bindTextAreaBlur"></textarea>                                                          
+                <text>{{textareacell}}/300</text>                                                                                                 
+            </view> 
+        </view>
+
+        <view style="clear:both;"></view>   
+      <button formType="submit" class="surecard_cardset" hover-class="submit">确定</button>  
+      <view class="delcard"> 点击确定，即表示已阅读并同意
+          <navigator url="/pages/user_rule" hover-class="none" class="txtnav">
+           <text style="color:#c7000b"> 《用户协议》</text>
+          </navigator>  
+      </view>
+    </view>
+
+</form>
+</template>
+<script>                             
+import wepy from 'wepy';
+import Cropper from '@/components/wepy-com-cropper' 
+const device = wx.getSystemInfoSync()
+const width = device.windowWidth
+const height = device.windowHeight - 50
+import api from '@/api/api';                                                                            
+import tip from "@/utils/tip";
+import util from '@/utils/util'; 
+import {
+  SYSTEM_INFO,                                                                                
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';
+export default class Card extends wepy.page {
+  config = {
+    navigationBarTitleText: '卡片设置',
+    navigationBarBackgroundColor: '#F2F2F2'
+  };
+
+  data = {
+    datasrc: '',
+    cropperOpt: {
+        width,
+        height,
+        scale: 2.5,
+        zoom: 8,
+        cut: {
+          x: (width - 300) / 2,
+          y: (height - 300) / 2,
+          width: 300,
+          height: 300
+        }
+      }, 
+    vertify:"",
+    inphone:"",
+    inwork: "",
+    infirm: "",
+    position:"",
+    company:"",
+    logo:"",
+    placeholder:"",
+    address:"",
+    phone : "",
+    randCode:"",
+    content:"",
+    sendMsgDisabled: false,
+    uid:null,
+    time: 60,
+    m_type:1,
+    is_has:0,
+    is_mobile:1,
+    mobile:"",
+     //初始默认主营产品
+    products2:"纽扣",
+    //初始默认值公司类型
+    types2:"生产型",  
+    products:[],
+    types:[],
+    baseTypes:{},
+    baseData:{},
+    Datamobile: "", 
+    navindex:12,
+    navindex2:12,
+    typeid: [], //排序索引 
+    typeid1: [],
+    sureOnline: false,
+    typeid2: 3,
+    sortindex: 0, //分类索引
+    navBarType: [], //供应栏目
+    navBarTypeList: [], // 展开二级栏目列表                                                   
+    navBarTypeList1: [],
+    comlogo: '',
+    UID: 592,
+    uploadPage:false,
+    i: 1,
+    //是否选中其他
+    is_another:false,
+    another:"",
+    coordinates: '',  // 经纬度
+    textareacell:0,
+    noUploadImg: true,
+    checkAddress:'',
+    imgArray_t: '',
+    name: ''                                                                                                            
+  };
+
+  components = {
+    cropper: Cropper
+  }
+  //提交编辑结果
+  async bindFormSubmit(e){ 
+    let that = this;
+    that.setStorage(); 
+    let name = e.detail.value.nickName1,                              
+    address = e.detail.value.address,
+    code = e.detail.value.code, 
+    company = e.detail.value.company,
+    content = e.detail.value.content, 
+    coordinates = e.detail.value.coordinates, 
+    phone = parseInt(e.detail.value.phone),
+    position = e.detail.value.position; 
+ 
+    let logo = this.logo, type = this.types2, 
+    products = this.products2;
+    if(products == "其他"){
+      products = this.another;
+    }
+    if(address == ""){
+      address = this.address;
+      coordinates = this.coordinates; 
+    };
+
+    if(name == '' || phone == '' || position == '' || company == '' || address == '' || type == '' || products == '' ){
+        tip.error("* 号项为必选项");
+        return false;
+    };
+    if(that.is_mobile == 0){
+        if(this.randCode != code || code ==''){
+          tip.alert("验证码错误！");
+          return false;
+        }
+    };
+
+    const json = await api.Add({     
+      query: {                                
+        uid: that.UID,
+        is_mobile: that.is_mobile,
+        mobile:phone,
+        name: name,
+        position: position,
+        company: company,
+        address: address,
+        latitude: coordinates,
+        types: type,
+        products: products,
+        logo: logo,
+        content: content,
+        method:"POST"
+      }
+
+    });
+
+    if (json.data.code == 200) {                                                                                                                
+        tip.success("编辑成功"); 
+        let Uid = wepy.getStorageSync(USER_UID);   
+        Uid.is_mobile = 1;
+        wepy.setStorageSync(USER_UID, Uid);                                                                                                                                             
+        wepy.switchTab({                                                                                                                    
+          url: '/pages/card'                                                                                                                                                                                  
+        });
+    }
+    if (json.data.code == 201) {
+      tip.error("编辑失败");
+    }
+    if (json.data.code == 400) {
+      tip.error("非法请求或者参数为空");
+    }
+
+
+      
+  }
+  async pubswichNav(e) {                         
+    this.navindex = e.currentTarget.dataset.navindex;
+    this.types2 =  e.currentTarget.dataset.types;                                                    
+               
+  }
+
+   async pubswichNav2(e) {                         
+    this.navindex2 = e.currentTarget.dataset.navindex;
+    this.products2 =  e.currentTarget.dataset.products;
+    if(this.products2 == "其他"){
+      this.is_another = true;
+    }else{
+      this.is_another = false;
+      this.another = "";
+    }                                                     
+               
+  }
+  async  bindTextAreaBlur(e){
+      this.textareacell = e.detail.cursor;                          
+  }
+  //图片上传
+  async uploadImg() {
+    let that = this;                                                                                                                    
+    let uId = that.UID;   
+    that.setStorage();
+ 
+    return new Promise((resolve, reject) => {        
+      wx.chooseImage({                
+        count: 1, // 默认9
+        sizeType: ['compressed'], // 可以指定是原图还是压缩图，默认二者都有  
+        sourceType: ["album", "camera"], // 可以指定来源是相册还是相机，默认二者都有                            
+        success: function(res) { 
+          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片                                 
+          const src = res.tempFilePaths[0]
+          that.uploadPage = true;
+          //  获取裁剪图片资源后，给data添加src属性及其值  
+          that.$invoke('cropper', 'pushOrigin', src);
+          that.datasrc = src;
+          that.$apply();
+        } 
+      });  
+
+      
+    });
+  }
+   //删除图片
+  async delete(e) { 
+        let calore = wepy.getStorageSync(USER_UID);
+        let uId =  calore.uid; 
+        let that = this;    
+        const res = await api.PicDelimg({
+          query: {
+            uid: uId,
+            pic: that.logo,  
+            method: "POST"     
+          }
+        });
+        if (res.data.code == 200 || res.data.code == 201) {  
+            
+            that.logo = '';        
+            if(that.logo == "") {      
+            that.noUploadImg = true;                                                              
+            }
+            that.$apply(); 
+        }  
+
+  }
+
+    async uploadCny(comlogo) { 
+        var that = this;                
+        comlogo = String(comlogo);
+        wx.uploadFile({
+            url: "https://api.fuliaoquan.com/api/v1/card/UploadLogo", //仅为示例，非真实的接口地址                               
+            filePath: comlogo,      
+            name: "myimage",  
+            formData: {
+            uid: that.UID
+            },
+            success: function(res) {    
+            let pics = JSON.parse(res.data);              
+            
+            pics = pics.data.pic; 
+            that.comlogo = pics;
+            that.logo =  pics;
+            that.noUploadImg = false;
+            that.$apply(); 
+            }       
+        }); 
+    }
+
+
+    // 获得公司类型
+  async GetTypes(uId){  
+    let that = this; 
+    const res = await api.GetTypes({     
+      query: {                                                                                                                                   
+        uid: uId,                                
+        method:"POST",                          
+      }
+    });
+    if (res.data.code == 200) {  
+       that.baseTypes = res.data.data;	
+       that.types = that.baseTypes.types;
+       that.products = that.baseTypes.products;                       
+      
+     }
+    if(res.data.code == 201 ) {
+      
+        
+    }                                                
+      that.$apply();  
+    }
+
+    // 获取纽扣信息列表
+  async getData(uId){  
+    let that = this; 
+    const res = await api.Edit({     
+      query: {                                                                                                                                   
+        uid: uId,                                
+        method:"POST",                                        
+      }
+    });
+      if (res.data.code == 200) {
+          
+        that.baseData = res.data.data;  
+        that.address = that.baseData.address;
+        let a = that.baseData.latitude[0],b = that.baseData.latitude[1];                                                          
+        that.coordinates = a+","+b;
+         
+        that.logo = that.baseData.logo;
+        that.content = that.baseData.content;
+        that.is_mobile = parseInt(that.baseData.is_mobile);
+        that.Datamobile = that.baseData.mobile;  
+        if(that.logo !=""){
+            this.noUploadImg = false;
+        }else{
+            this.noUploadImg = true;
+        }
+
+        if(that.address == ''){
+            that.placeholder = "请点击选择您的公司地址";
+        }else{
+            that.placeholder = that.address;
+        }
+
+        
+        
+        var navbase = res.data.data.types;
+        var navbase2 = res.data.data.products;
+        if(that.baseData.other == 1){
+            navbase2 = "其他";
+            that.is_another = true;                                                                               
+            that.another = res.data.data.products;                                                                                                          
+
+        }
+        that.types2 =  res.data.data.types;
+        that.products2 =  res.data.data.products;
+
+        var baseD = that.types;
+        var baseD2 = that.products 
+        for(var i = 0; i<baseD.length;i++) {                                                                
+          if(navbase == baseD[i]){
+            this.navindex = i;
+          }         
+        }
+
+        for(var i = 0; i<baseD2.length;i++) {
+          
+          if(navbase2 == baseD2[i]){
+            this.navindex2 = i;
+          }         
+        }
+        that.$apply(); 
+      }
+      if(res.data.code == 201 ) {
+
+        that.baseData = res.data.data;   
+        that.Datamobile = that.baseData.mobile;
+        that.is_mobile = parseInt(that.baseData.is_mobile);
+        that.placeholder = "请点击选择您的公司地址";      
+        that.$apply();
+      }                                                
+       
+    }
+
+
+    async setStorage(){
+      
+      wepy.setStorageSync("name",this.name);  
+      wepy.setStorageSync("phone",this.phone);  
+      wepy.setStorageSync("vertify",this.vertify);  
+      wepy.setStorageSync("work",this.inwork);  
+      wepy.setStorageSync("firm",this.infirm);
+      wepy.setStorageSync("another",this.another);  
+    }
+    async sendVerifyCode() {
+    let Uid = wepy.getStorageSync(USER_UID);
+
+    this.randCode = Math.floor(Math.random()*(999999));       
+    if( this.randCode<10){  
+      this.randCode = "00000"+this.randCode;
+    }else if( this.randCode<100){
+      this.randCode = "0000"+this.randCode;
+    }
+    else if( this.randCode<1000){
+      this.randCode = "000"+this.randCode;
+    }
+    else if( this.randCode<10000){
+      this.randCode = "00"+this.randCode;
+    }
+    else if( this.randCode<100000){
+      this.randCode = "0"+this.randCode;
+    }
+
+    this.uid = Uid.uid;
+    const json = await api.SendSms({
+      query: {
+        code:this.randCode,
+        mobile: this.phone,
+        uid:this.uid,
+        method:"POST",
+        m_type:1
+      }
+    });
+    if (json.data.code == 200) { 
+      tip.success("发送成功!");
+      this.sendMsgDisabled = true;
+      this.$apply();
+    } else if(json.data.code == 201){     
+      tip.error(json.data.msg)
+    }else{
+      tip.error(json.data.msg)
+    }
+  }
+
+  methods = {  
+    setStoragename(e){ 
+      this.name = e.detail.value 
+    },
+    setStoragephone(e){
+      this.phone = e.detail.value;
+    },
+    setStorageverify(e){
+      this.vertify = e.detail.value
+    },
+    setStoragework(e){ 
+      this.inwork = e.detail.value 
+    },
+    setStoragefirm(e){ 
+      this.infirm = e.detail.value 
+    },
+    setStorageanother(e){ 
+      var none = e.detail.value;
+      none = none.replace(' ', '');
+      if(none === '') {
+        none = none.replace(/^\s*|\s*$/g, '其他')                                                                                                   
+      }
+      this.another = none; 
+      console.log(none);
+    },
+    change(e){ 
+      if(wepy.$instance.globalData.address !== ''){  
+        this.address = wepy.$instance.globalData.address2;    
+      }     
+    },
+    handleContact(e) {
+        console.log(e.path) 
+        console.log(e.query)
+    },
+   add(e) {
+       let that = this; 
+        that.setStorage();
+        wx.chooseLocation({ 
+            type: "wgs84",
+            success: function(e) { 
+                e.latitude, e.longitude, e.speed, e.accuracy;                                                                                                                   
+                var t = e.latitude + "," + e.longitude; 
+                that.setData({
+                    address2:e.address,
+                    coordinates2: t
+                });
+            },
+            fail:function(e){ 
+              console.log(e)
+                wx.navigateTo({
+                url: '/pages/getlocation'
+                }) 
+              
+              console.log(e)
+            }
+        });
+        
+    },
+    phoneInput(e) {
+        this.phone = e.detail.value;
+    },
+    sendCode(e) {
+      if (this.phone == "") {
+        tip.alert("输入手机号码");
+        return false;
+      }else if(util.vailPhone(this.phone) == false){
+          tip.alert("输入正确号码");
+          return false;
+      }
+      this.sendVerifyCode();
+      let that = this;
+      let interval = setInterval(() => {                                    
+        if ((that.time--) <= 0) {
+          that.time = 30;
+          that.sendMsgDisabled = false;
+          clearInterval(interval);
+          that.$apply();
+        }
+        that.$apply();
+      }, 1000);
+    },
+     uploadTap () {
+        wx.chooseImage({
+          count: 1, // 默认9
+          sizeType: ['original', 'compressed'], // 可以指定是原图还是压缩图，默认二者都有         
+          sourceType: ['album', 'camera'], // 可以指定来源是相册还是相机，默认二者都有                      
+          success: (res) => {
+            const src = res.tempFilePaths[0]
+            //  获取裁剪图片资源后，给data添加src属性及其值  
+            this.$invoke('cropper', 'pushOrigin', src)  
+          }
+        })
+      },
+      upload () { 
+        this.$invoke('cropper', 'pushOrigin', this.datasrc);
+      },
+      getCropperImage () {
+        this.$invoke('cropper', 'getCropperImage', (comlogo) => {
+          if (comlogo) { 
+            this.uploadPage = false;
+            this.$invoke('cropper', 'pushOrigin', comlogo)   
+            this.uploadCny(comlogo);
+            
+            this.$apply();
+
+          } else {
+            console.log('获取图片地址失败，请稍后重试') 
+          }
+        })
+      }
+  }
+
+  //小程序分享
+    onShareAppMessage(res) {
+     
+        wx.showShareMenu({
+          withShareTicket: true
+        })
+
+        return {
+
+            title:"辅料圈",
+            path:'/pages/cardset?uid='+this.UID     
+        }
+ 
+      }  
+
+  onShow(){
+
+    this.$invoke('cropper', 'pushOrigin', this.datasrc);
+    this.name = wepy.getStorageSync("name");
+    if( wepy.getStorageSync("phone")  != ''){
+     this.Datamobile = wepy.getStorageSync("phone");          
+    }
+    this.infirm = wepy.getStorageSync("firm");
+    //验证码
+    this.inwork = wepy.getStorageSync("work");
+    this.getData(this.UID); 
+  }
+  onLoad(option) {
+    let that = this;
+    let calore = wepy.getStorageSync(USER_UID);               
+    that.UID =  calore.uid; 
+    that.GetTypes(that.UID);
+    that.uploadPage = false;
+    if(option.address != ''){
+      that.address2 = option.address;
+      that.coordinates2 = option.lt;
+    }
+    // if(option.comlogo != "undefined") {
+    //     that.uploadCny(option.comlogo);
+    // }         
+    that.$apply(); 
+    that.i++;
+    that.noUploadImg = true;                                                          
+  }
+}
+</script>
+<style lang="less">  
+    .none{
+      height:0;
+      min-height: 0;
+      opacity: 0;
+    }
+    .submit{
+      opacity: 0.9;
+    }
+    .surecard{
+        width:99%;
+        height:80rpx;
+        text-align:center;
+        line-height:80rpx;
+        font-size:32rpx;
+        color:#fff;
+        background:#c7000b;
+        border-radius:5px;
+        margin:30rpx auto 20rpx;
+
+    }
+    .delcard{
+        text-align: center;
+        font-size: 28rpx;
+        color: #999;
+        .txtnav{display: inline;}
+    }
+    .cardset-Title{
+        width: 120rpx;
+        font-size: 32rpx;
+        color: #333;
+        display:inline-block; 
+        vertical-align:top; 
+            image{
+            width:19rpx;
+            height:19rpx; 
+            float:right; 
+            margin:16rpx 27rpx 0 0; 
+            }
+        }
+        .content{ 
+        width:480rpx; 
+        height:53rpx;
+        font-size:28rpx;
+        font-family:PingFangSC-Regular; 
+        font-weight:400; 
+        display: inline-block;
+        color:#333; 
+        }
+        .cardset{ 
+            .cardmap{
+            width:31rpx;
+            height:31rpx; 
+            margin-right:11rpx;
+            vertical-align:top; 
+            padding-top:11rpx; 
+            } 
+            .pubTextarea{
+            margin-top: 12rpx;
+            }
+            position: relative;
+        padding:32rpx 0 16rpx; 
+        width:99%; 
+        display:inline-block; 
+        overflow: hidden;
+        line-height:49rpx;
+        border-bottom:1rpx solid #E0E0E0; 
+        }
+        .getmsg{
+        width:184rpx;
+        height:58rpx;
+        border-radius:6rpx;
+        border:1px solid #979797;
+        text-align:center;
+        line-height:58rpx;
+        margin:48rpx 0 0 31rpx;
+        display:inline-block; 
+        vertical-align:top;
+
+        }
+ 
+      .cropper-wrapper{
+          position: relative;
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          justify-content: center;
+          height: 100%;
+          background-color: #e5e5e5;
+      }
+
+      .cropper-buttons{
+          display: flex;
+          flex-direction: row;
+          justify-content: space-between;
+          align-items: center;
+          justify-content: center;
+          position: absolute;
+          bottom: 0;
+          left: 0;
+          width: 100%;
+          height: 50px;
+          line-height: 50px;
+      }
+
+      .cropper-buttons{
+      .upload,.getCropperImage{
+          width: 50%;
+          text-align: center;
+          }
+      }
+      .cropper{
+          position: absolute;
+          top: 0;
+          left: 0;
+      }
+
+      .cropper-buttons{
+          background-color: rgba(0, 0, 0, 0.95);
+          color: #04b00f;
+      }
+
+      .surecard_cardset{
+          width:98%;
+          height:80rpx;
+          text-align:center;
+          line-height:80rpx;
+          font-size:32rpx;
+          color:#fff;
+          background:#c7000b;
+          border-radius:5px;  
+          margin:12px auto 10px; 
+      }
+</style>

@@ -1,0 +1,295 @@
+<template>
+  <view class="map" >
+    <map id="map" longitude="{{myLong}}" latitude="{{myLat}}" scale="14" markers="{{markers_center}}"  bindmarkertap="markertap" @regionchange="regionchange" show-location style="width: 100%; height:100%">
+      <cover-view class="controls" bindtap="cancel" wx:if = "{{show_c}}">
+        <cover-view class="time">
+          <cover-view class="play pause flex_s" catchtap="play">
+             <cover-view class="flex_s">
+                <cover-view class="img44" style="margin-right: 20rpx;">
+                    <cover-image style="width:100%;height:100%;" src="{{car_msg.logo}}" />
+                </cover-view>
+               <cover-view>
+                  <cover-view style="overflow:hidden;white-space:nowrap;text-overflow:ellipsis;display: inline-block;width:400rpx">{{car_msg.company}}</cover-view>
+                  <cover-view>
+                      <cover-view style="display: inline-block;" class="cardtxt">{{car_msg.types}}</cover-view>
+                      <cover-view style="display: inline-block;" class="cardtxt">{{car_msg.products}}</cover-view>
+                  </cover-view>
+               </cover-view>
+             </cover-view>
+             <cover-view style="margin-right:25rpx ;">{{car_msg.name}}</cover-view>
+          </cover-view>
+        </cover-view>
+      </cover-view>
+
+      <cover-view class="getContent" style="width:100%;height:100%;background:#fff;" wx:if="{{show_set}}"> 
+          <cover-view class="getTitle"> 温馨提示</cover-view>
+          <cover-view class="getTxt"> 为了方便您使用辅料地图，请打开位置授权。</cover-view> 
+          <button class="btn" open-type="openSetting"  hover-class="btnChange"> 位置授权</button> 
+      </cover-view>
+
+       <cover-view class="type_p flex_s"> 
+          <cover-view class="flex_a type_p_c fz24"> 
+             <cover-view>生产:<cover-image class="img13" src="../images/icon-black.png" /></cover-view>
+                <cover-view>加工:<cover-image class="img13" src="../images/icon-grey.png" /></cover-view>
+                <cover-view>销售:<cover-image class="img13" src="../images/icon-blue.png" /></cover-view>
+                <cover-view>服务:<cover-image class="img13" src="../images/icon-red.png" /></cover-view>
+                <cover-view>研发:<cover-image class="img13" src="../images/icon-orange.png" /></cover-view>
+          </cover-view>
+          <cover-image class="img44" src="../images/icon-card.png" @tap="changeB"/>
+      </cover-view>
+    </map>
+  </view>
+</template>
+
+<script>
+  import wepy from 'wepy';
+  import api from "@/api/api";                                  
+  import tip from "@/utils/tip";  
+  import {  
+    SYSTEM_INFO,
+    SEL_CLASS_CODE,
+    USER_SPECICAL_INFO,
+    USER_UID,
+    USER_INFO
+  } from '@/utils/constant'; 
+  export default class pageQr extends wepy.page {
+    
+    config = {
+      navigationBarTitleText: '辅料地图',
+      enablePullDownRefresh: false,
+      navigationBarBackgroundColor: '#F2F2F2'
+    }
+    
+    data = {
+      markers: [],
+      show_c:false,
+      show_set:false,
+      title: '',
+      uid:0,
+      c_uid:0,
+      longitud: 0,
+      latitude: 0,
+      myLong: '',
+      myLat: '',    
+      log: '',
+      company: '',
+      types: '',
+      products: '',
+      name: '',
+      car_msg: {}, 
+      text: '',
+      height: '',
+      url: ''
+    }
+    components = {
+
+    }
+
+
+     async getMark() {
+        let that = this;
+          const json = await api.CardMap1({
+            query: {
+              uid:this.uid,
+              method:"POST"
+            }
+          });
+        if (json.data.code == 200) {
+            console.log(json.data.data)
+            let dataList = json.data.data;
+            that.markers = dataList;
+            // that.createMarker(dataList);
+            that.setData({
+                markers_center: json.data.data
+            })
+            that.$apply()
+          } else {
+            
+        }
+      }
+    async getCarlist(uid) {
+        let that = this;
+        const json = await api.MyCard({
+          query: {
+            uid:uid,
+            method:"POST"
+          }
+        });
+
+        if (json.data.code == 200) {
+            that.car_msg =  json.data.data[0];
+            that.$apply();
+           
+   
+
+        }else if(json.data.code == 201){
+             
+        } else {
+          tip.error(json.data.msg);
+                                                                              
+        }          
+    }
+    onShow() {
+     
+    }
+    onReady () {
+
+      
+      // this.updataMap()
+      
+    }
+    onLoad() {
+      let that = this;
+      let calore = wepy.getStorageSync(USER_UID);                                         
+      that.uid =  calore.uid;
+      this.mapCtx = wx.createMapContext('map')
+      this.getCenterLocation()
+      wx.request({
+          url: 'https://api.fuliaoquan.com/api/v1/card/CardMap1',
+          cachetime: "0",
+          method:'post',
+          data: {uid: that.uid},
+          header: {'Content-Type':  'application/x-www-form-urlencoded'},                                         
+          success: (t)=>{
+           that.setData({markers_center: t.data.data});
+          }
+      })
+      // that.getMark();              
+    }
+
+    getCenterLocation() {
+      let that = this
+      wx.getLocation({
+        type: 'gcj02',
+        success: function(res) {
+          that.show_set = false
+          that.myLong = res.longitude
+          that.myLat = res.latitude
+          wx.setStorageSync('myLong', res.longitude)
+          wx.setStorageSync('myLat', res.latitude)
+          that.$apply()
+        },
+        fail: function () {
+          wx.showModal({
+            title: '提示',
+            confirmText: '去授权',
+            content: '不授权将无法查看辅料地图哦！',
+            success: (res) => {
+              if (res.confirm) {
+                that.show_set = true
+                that.$apply()
+              }else{
+                that.show_set = true
+                that.$apply()
+              }
+            }
+          })
+        }
+      })
+    }
+
+    methods = {
+      play(){
+       wx.navigateTo({
+          url: '/pages/avator?uid='+this.c_uid                                                    
+        })
+        this.show_c = false;
+        this.car_msg = {};
+        this.$apply()
+      },
+      cancel(){
+        this.show_c = false;
+        this.car_msg = {};
+        this.$apply()
+      },
+      translateMarker() {
+        this.mapCtx.translateMarker({
+          markerId: 0,
+          autoRotate: true,
+          duration: 1000,
+          destination: {
+            latitude: 23.10229,
+            longitude: 113.3345211
+          },
+          animationEnd() {
+            // console.log('animation end')
+          }
+        })
+      },
+      markertap(e) { 
+        this.show_c = true;
+        this.getCarlist(e.markerId);
+        this.c_uid = e.markerId;
+        this.$apply()
+        
+      },
+      changeB(){
+        // wepy.switchTab({
+        //   url: '/pages/card'                                                        
+        // })
+        
+        // wx.reLaunch({
+        //   url: '/pages/card'
+        // })
+        wx.navigateBack({
+          delta: 1
+        })
+      }
+    }
+  }
+</script>
+
+<style lang="less">
+  page{
+    background: white;
+    width:100%;
+    height:100%;
+  }
+  .map{
+    width:100%;
+    height:100%;
+  }
+  .controls,.time{
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    position: absolute;
+    bottom:0;
+    right:0;
+  }
+  .time{
+    height:190rpx;
+    background:#fff;
+    bottom:-15rpx;
+  }
+  .pause{
+    height:98rpx;
+    padding:0 5%;
+    line-height: 106rpx;
+  }
+  .play{
+    padding:20rpx 5%;
+  }
+  .type_p{
+    width:90%;
+    margin:20rpx auto;
+    padding:0 10rpx;
+  }
+  .type_p_c{
+    height:88rpx;
+    background:rgba(255,255,255,0.6);
+    padding:0 10rpx 0 26rpx;
+  }
+  .img13{
+    margin-right: 20rpx;
+    line-height: 20rpx;
+    position: relative;
+    top:5rpx;
+    right:-6rpx;
+    display: inline-block;
+  }
+  .img44{
+    margin-right: 0;
+  }
+
+</style>

@@ -1,0 +1,322 @@
+<template>
+  <view class="top_link bgf2 flex_f">
+    <form bindsubmit="formSubmit_collect" report-submit="true">  
+      <button  formType="submit"  hover-class="none" class='invisibleclass' data-type="1" @tap="changemang">
+        <span class="notice dis_ib cfff bgc7b fz22 tc" wx:if = "{{totalMsg.comments>0}}">{{totalMsg.comments>9?"...":totalMsg.comments}}</span>
+        <view class="name name2 {{active == 1 || active == 2? 'active':''}}" ><span></span>私信</view>
+      </button>
+    </form>
+     <form bindsubmit="formSubmit_collect" report-submit="true">  
+      <button  formType="submit"  hover-class="none" class='invisibleclass' data-type="3" @tap="changemang">
+      <span class="notice dis_ib cfff bgc7b fz22 tc" wx:if = "{{totalMsg.collect>0}}">{{totalMsg.collect>9?'...':totalMsg.collect}}</span>
+        <view class="name name1 {{active == 3 || active == 5? 'active':''}}" ><span></span>收藏</view>
+      </button>
+    </form>
+     <form bindsubmit="formSubmit_collect" report-submit="true">  
+      <button  formType="submit"  hover-class="none" class='invisibleclass' data-type="4" @tap="changemang">
+      <span class="notice dis_ib cfff bgc7b fz22 tc" wx:if = "{{totalMsg.like>0}}">{{totalMsg.like>9?"...":totalMsg.like}}</span>
+      <view class="name name2 {{active == 4? 'active':''}}" ><span></span>点赞</view>
+       </button>
+    </form>
+  </view>
+   <scroll-view scroll-y="true" class="swiper-item-box">
+      <view class="info">
+        <view class="info_block">
+          <view class="flex_f w_89" wx:if="{{active > 4 || active < 4}}">
+            <span class="bgf9f9f9 c333 fz24 p_all border dis_ib {{active == 1 ||  active == 3? 'active_ch':''}}" data-type="{{active == 1 || active == 2?'1':'3'}}" style="margin-right: 24rpx;" @tap="changemang">
+              {{active == 1 || active == 2? '收到的私信':''}}{{active == 3 || active == 5? '帖子收藏':''}}
+            </span>
+            <span class="bgf9f9f9 c333 fz24 p_all border dis_ib {{active == 2 ||  active == 5? 'active_ch':''}}" data-type="{{active == 3 || active == 5? 5 :2}}" @tap="changemang">
+              {{active == 2 || active == 1? '发出的私信':''}}{{active == 5 || active == 3? '卡片收藏':''}}
+            </span>
+          </view>
+          <repeat for="{{comment}}" key="index" index="index" item="item"  wx:if="{{no_detail == 1}}">
+            <view class="flex_s item" style="border:0;" wx:if="{{typeid>2 || typeid<2 }}">
+              <view class="c333 fz28 flex_f">
+               <navigator url="/pages/avator" hover-class="none" url="/pages/avator?uid={{active < 5?item.user.uid:item.uid}}">
+                <image src="{{active < 5?item.user.avatar:item.avatar}}" class="img30 img25"/>
+               </navigator>
+              <span class="text_ep dis_ib" style="width:270rpx;margin-left: 15rpx;height:40rpx">{{active >= 5?item.name:item.user.name}}</span>
+                {{active == 3? '收藏了你的帖子': active == 5?'收藏了你的卡片':''}}{{active == 1? '私信了你':active == 4? '为你点赞':''}}
+              </view>
+              <view class="fz24 c999">{{active >= 5?item.pubdate:item.user.pubdate}}</view>
+            </view>
+            <navigator class="item" url="/pages/postDetail?scene=undefined&a=1&id={{item.invitation.tid}}&uid={{UID}}" data-id="{{item.invitation.tid}}">
+              <view class="item_content" wx:if="{{active < 3}}">{{item.user.content}}</view>
+              <view class="arrow" wx:if="{{active < 5}}">
+                <view class="c333">
+                  {{item.invitation.name}}:
+                </view>
+                <view class="item_content item_content2">{{item.invitation.content}}</view>
+              </view>
+            </navigator>
+          </repeat>         
+        </view>
+      </view>
+   </scroll-view>
+   <view class="no_data c666 fz32" wx:if="{{no_detail == 0}}">
+    <image src="https://api.fuliaoquan.com/public/images/v1/no_detail.png"></image>
+      暂无信息
+   </view>
+   <view class="c999 fz24 p_tbbb tc" wx:if="{{showDone}}">
+      我们是有底线的
+   </view>
+</template>
+<script>
+
+import wepy from 'wepy';
+import api from '@/api/api';
+import {
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';
+
+ import tip from '@/utils/tip';
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: '消息中心',
+    navigationBarBackgroundColor: '#F2F2F2'  
+  }
+  components = {
+
+  }
+
+  data = {
+    totalMsg:{},
+    comment:[],
+    init:0,
+    UID:0,
+    active:1,
+    typeid:1,
+    no_detail:1,
+    showDone: false,
+     //当前页面
+    currentPage: 1,
+    //总页数
+    page_total: 0,
+    //是否显示 底部loading
+    showLoading: true,
+    //防止重复加载
+    preventRepeatReuqest: false,
+    showDone:false
+  }
+  async getComment(page) {
+    let that = this;
+    const json = await api.MsgList({
+      query: {
+        uid: this.UID,
+        page:page || 1,
+        type:this.typeid,
+        size:6,
+        method:"POST"
+      }
+    });
+
+    if (json.data.code == 200) {
+       this.comment = [...that.comment,...json.data.data.list];
+       console.log(this.comment)
+       that.page_total = json.data.data.total;
+       if(json.data.data.total>=1){
+          this.no_detail = 1;
+      }else{
+          this.no_detail = 0;
+      }
+       tip.loaded();
+      that.$apply();
+    } else {
+      tip.error(json.data.msg)
+    }
+    that.showLoading = false;
+  }
+  async FormId(formId) {
+    let that = this;
+      const json = await api.FormId({
+        query: {
+          formid: formId,
+          uid:this.UID,
+          method:"POST"
+        }
+      });
+
+    if (json.data.code == 200) {
+
+      } else {
+        
+    }
+  }
+  async MsgTotal() {
+    let that = this;
+      const json = await api.MsgTotal({
+        query: {
+          uid:this.UID,
+          type:1,
+          method:"POST"
+        }
+      });
+
+    if (json.data.code == 200) {
+        that.totalMsg = json.data.data;
+        console.log(that.totalMsg);
+      } else {
+        tip.error(json.data.msg)
+    }
+  }
+  onLoad() {
+    let that = this;
+    let Uid = wepy.getStorageSync(USER_UID);
+    this.UID = Uid.uid;
+    that.currentPage = 1;
+    tip.loading();
+    if(this.init == 0){
+      this.MsgTotal();
+    }
+    this.getComment();
+  }
+  onShow(){
+  if(this.init > 0){
+      this.MsgTotal();
+    }
+    this.init+=1   
+  }
+  computed = {
+
+  }
+  methods = {
+    formSubmit_collect(e) {
+      let formId = e.detail.formId;
+      this.FormId(formId);
+    },
+    changemang(e){
+
+      this.typeid = e.currentTarget.dataset.type;
+      this.active = this.typeid;
+       this.comment = [];
+       this.onLoad();
+      
+    },
+  }
+  events = {
+
+  }
+
+  props = {
+    ListP: []
+  }
+
+  //加载更多
+  onReachBottom() { 
+    
+    let that = this;
+    that.showLoading = true; 
+    if(that.page_total <= that.currentPage){
+        that.showDone = true;
+    }
+
+    //判断总页数是否大于翻页数
+    if ((that.page_total) > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.preventRepeatReuqest = true;
+      that.currentPage++;
+      that.getComment(that.currentPage,this.UID);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  };
+}
+
+</script>
+<style lang="less">
+.info{
+  padding-top: 132rpx;
+}
+.top_link{
+  position:fixed;
+  top:0;
+  left:0;
+  width:100%;
+  z-index: 999;
+}
+.header {
+  background: #F2F2F2;
+  height: 264rpx;
+  width: 100%;
+}
+
+.header_content {
+  width: 100%;
+  margin: 0 auto;
+  height:100%;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  flex-direction: flex-start;
+  padding-left:80rpx;
+  color:#333333;
+}
+
+.avatarUrl {
+  width: 135rpx;
+  height: 135rpx;
+  border-radius: 50%;
+  margin-right: 35rpx;
+}
+
+.nickName {
+  font-size: 30rpx;
+  padding-top: 15rpx;
+  text-align: left;
+  font-weight: bold;
+}
+
+.info_block {
+  margin-top: 0rpx;
+  .item {
+    border-bottom: 1rpx solid #E6E6E6;
+    background: #fff;
+    margin: 34rpx auto;
+    width:89%;    
+    align-items: center;
+    justify-content: space-between;
+  }
+  .item_content {
+    height:36rpx;
+    font-size: 26rpx;
+    color: #333333; 
+    white-space: nowrap;
+    overflow: hidden;
+     text-overflow: ellipsis;
+  }
+  .phone_box{
+    color:#999999;
+  }
+  .item_img {
+    width: 48rpx;
+    height: 48rpx;
+  }
+  .arrow{
+    color: #333;
+    padding:10rpx 20rpx;
+    font-size: 26rpx;
+    background:#F2F2F2;
+    margin:24rpx 0 45rpx 0;
+  }
+  .item_content2{
+    font-weight: 100;
+    color:#666;
+    margin:15rpx 0 15rpx 0;
+  }
+  .tip {
+    color: #999;
+    font-size: 24rpx;
+    margin-top: 20rpx;
+    margin-left: 60rpx;
+  }
+}
+
+</style>

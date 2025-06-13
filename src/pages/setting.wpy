@@ -1,0 +1,110 @@
+<template>  
+    <view class="info_block">   
+    
+      <navigator wx:for="{{helptitle}}" class="item flex_s" url="/pages/user_rule?id={{item.id}}" hover-class="none"> 
+          <view class="item_content">  
+            <view class="text"> {{item.title}} </view> 
+          </view>  
+          <view class="arrow"><image class="item_R" src="{{item.pic}}"/></view> 
+      </navigator> 
+    </view>  
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';                                                                  
+import tip from '@/utils/tip';  
+import {
+  USER_INFO,
+  USER_SPECICAL_INFO,
+  USER_UID
+} from '@/utils/constant';
+export default class setting extends wepy.page {
+
+  config = {
+    navigationBarTitleText: '帮助中心',
+    navigationBarBackgroundColor: '#F2F2F2'
+  }  
+
+  data = {
+    helptitle: []
+  }   
+
+  async agreeMent(cuid) { 
+    let that = this;    
+    let calore = wepy.getStorageSync(USER_UID);  
+
+    const res = await api.updateVersion({                   
+    query: { 
+        uid: calore.uid,
+        typeid:2,
+        method: "POST"  
+    }
+    }); 
+    if(res.data.code == 200) {  
+        that.helptitle = res.data.data.list;
+        console.log(that.helptitle)  
+        that.$apply();     
+    }
+  } 
+
+  onShow() {
+    let calore = wepy.getStorageSync(USER_UID);  
+    console.log(calore.uid)
+    if(calore.uid == undefined) {
+      wx.navigateTo({
+      url: '/pages/authorize?noclear='+true
+      })
+    }
+  }
+
+  onLoad() {    
+    this.agreeMent();  
+  }
+
+}
+</script>
+<style lang="less"> 
+.info_block {
+  margin-top: 0rpx;
+  .item {
+    border-bottom: 1rpx solid #F0F0F0;
+    background: #fff;
+    padding: 34rpx 36rpx;
+  }
+  .item_content {
+    display: flex;
+    align-items: center;
+    position: relative;
+    .text {
+      display: flex;
+      width:416rpx;
+      height:80rpx;
+      white-space:pre-wrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+      font-size: 28rpx;
+      margin-left: 20rpx;
+      color: #333333;
+    }
+  } 
+  .item_img {
+    width: 36rpx;
+    height: 36rpx;
+  }
+  .arrow {
+    color: #cccccc;
+    font-size: 32rpx;
+  } 
+}
+ 
+
+  .item_R{
+      width:186rpx;
+      height:146rpx;
+    } 
+</style>
+
+
+
+
+

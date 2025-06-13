@@ -1,0 +1,647 @@
+<template>
+    <view class="map">
+
+    <view style="background-color: #F3F3F3; height:100%;padding-top: 120rpx;">
+        
+      <!-- 分类下拉框 --> 
+          
+        <view class="navbar flex_f">    
+            <view wx:for="{{navbar}}" data-index="{{index}}" bindtap="swichNavSwitch" class="navBox {{currentNavbar==index ?'active' : ''}}">
+              <text>{{item}}</text>                                                                         
+              <image src="https://api.fuliaoquan.com/public/images/v3/ico-pull-active.png"/>
+            </view>
+            <view class="c000 fz26" style="position: absolute;right:8.5%;top:35%;" bindtap="changeB">  
+              <text class="cf09 p_lr border_red">地图模式</text>   
+            </view>                                                                      
+        </view>   
+        <view class="navScond"  wx:if="{{showfilter}}">   
+
+          <scroll-view  class="swiper-box {{currentNavbar==0 ? '' : 'hidden'}}">
+            <view>                  
+              <view class="navul">                        
+                  <button wx:for="{{navBarProducts}}" class="navli {{navindex==index? 'active' : ''}}" 
+                  bindtap="swichNav"  formType="submit" data-navindex="{{index}}" data-title = "{{item}}" data-type = "11"> {{item}}</button>
+                  <button class="navli {{navindex==100? 'active' : ''}}" bindtap="swichNav"  formType="submit" data-navindex="100" data-title = "0" data-type = "11">全部</button>                                         
+              </view>     
+            </view>   
+          </scroll-view>      
+
+          <scroll-view  class="swiper-box {{currentNavbar==1 ? '' : 'hidden'}}">                         
+            
+            <view>                  
+              <view class="navul">                        
+                  <button wx:for="{{navBarType}}"  bindtap="swichNav" formType="submit"  
+                   data-navindex="{{index}}" data-title = "{{item}}"           
+                  class="navli {{sortindex==index?'active':''}}" data-type = "12"> {{item}}</button>
+                  <button bindtap="swichNav"  formType="submit" data-navindex="100" class="navli {{sortindex==100?'active':''}}" data-title = "0" data-type = "12">全部</button>        
+              </view>    
+            </view>   
+          </scroll-view> 
+                                                                                                                           
+        </view>   
+        <view class="navScondGrey" wx:if="{{showfilter}}" bindtap="hideFilter"></view>
+        <view class="cardlist" style="border-top:1rpx solid #DBDBDB;"> 
+            <navigator url="/pages/cardset" hover-class="none" wx:if="{{is_hasCar == 0}}"> 
+                <view  class="cardcon cardnone">
+                    <view class="cardtl">
+                        <view class="cardh1"> 您还没有自己的卡片 </view>    
+                        <view class="cardtxt">立即拥有</view>   
+                    </view>
+                    <image class="icort" src="https://api.fuliaoquan.com/public/images/v3/ico-card-right.png"/> 
+                </view>
+            </navigator> 
+        </view>
+        <navigator url="/pages/avator?a=1&uid={{UID}}" hover-class="none" wx:if="{{is_hasCar != 0 }}">  
+            <view  class = "cardcon cardshow">  
+                <view class = "cardlt">
+                    <image src="{{hasCar.logo}}"/> 
+                </view>
+                <view class = "cardtl">
+                    <view class = "cardh1"> {{hasCar.company}} </view>
+                    <text class="cardtxt">{{hasCar.types}}</text> 
+                    <text class="cardtxt">{{hasCar.products}}</text> 
+                <view class = "txtrt">{{hasCar.name}}</view> 
+                </view>
+            </view>
+        </navigator>
+
+        <view  wx:if="{{no_detail == 1}}">
+            <scroll-view class="classify_detail" scroll-y='true' 
+            scroll-with-animation="true">
+              <!--列表模块-->
+              <repeat for="{{ListP}}" key="idx" index="idx">              
+                <navigator url="/pages/avator?uid={{item.uid}}" hover-class="none">  
+                <view  class = "cardcon cardshow">
+                    <view class = "cardlt">
+                        <image src="{{item.logo}}"/> 
+                    </view>
+                    <view class = "cardtl">
+                        <view class = "cardh1"> {{item.company}} </view>
+                        <text class="cardtxt">{{item.types}}</text> 
+                        <text class="cardtxt">{{item.products}}</text> 
+                    <view class = "txtrt">{{item.name}}</view> 
+                    </view>
+                </view>
+                </navigator> 
+
+              </repeat>
+              <view class="c999 fz24 bottom_n" wx:if="{{showDone}}">
+                我们是有底线的
+              </view>
+            </scroll-view>
+        </view>
+
+        <view class="no_data c666 fz32" wx:if="{{no_detail == 0}}">
+            <image src="https://api.fuliaoquan.com/public/images/v1/no_detail.png"></image>
+            暂无数据
+        </view> 
+    </view>
+
+
+    </view>
+</template> 
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip';
+import util from '@/utils/util';
+import {
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';
+const app = getApp();
+export default class Card extends wepy.page { 
+  config = {
+    navigationBarTitleText: '卡片模式',
+    enablePullDownRefresh: true,
+    navigationBarBackgroundColor: '#F2F2F2'
+  }
+  data = {
+        UID:0,
+        //个人中心卡片是否在
+        is_hasCar:1,
+        hasCar:[],
+        del_id:0,
+        init:0,
+        cardList:false,
+        cardListLoading: false,
+        optionId:'',
+        init_share:0,
+        is_share:2,
+        TZuser_id:0,
+        Comtent:'',
+        share:0,
+        ListP:[],
+        no_detail:1,
+        type123:"",
+        products123:"",
+        active:1,
+        //当前页面
+        currentPage: 1,
+        //总页数
+        page_total: 0,
+        //是否显示 底部loading
+        showLoading: true,
+        //防止重复加载
+        preventRepeatReuqest: false,
+        showDone:false,
+        showReturn:false,
+        navbar:["主营产品","公司类型"],
+        currentNavbar:0,
+        showfilter: false, // 展开二级栏目,
+        navBarType:[],// 类型菜单栏目
+        navBarProducts:[],// 产品类型栏目列表
+        navindex:-1,
+        sortindex:-1,
+        markers: [],
+        show_c:false,
+        show_set:false,
+        title: '',
+        c_uid:0,
+        longitud: 0,
+        latitude: 0,
+        myLong: '',
+        myLat: '',    
+        log: '',
+        company: '',
+        types: '',
+        products: '',
+        name: '',
+        car_msg: {}, 
+        text: '',
+        height: ''
+
+    }
+    async getCarlist1(uid) {
+        let that = this;
+        const json = await api.MyCard({
+          query: {
+            uid:uid,
+            method:"POST"
+          }
+        });
+
+        if (json.data.code == 200) {
+            that.car_msg =  json.data.data[0];
+            that.$apply(); 
+        }else if(json.data.code == 201){
+             
+        } else {
+          tip.error(json.data.msg);
+                                                                              
+        }          
+    }
+
+    async getCarlist() {
+        wepy.setStorageSync("getSecondTip", false);   
+        let that = this;
+        const json = await api.MyCard({
+          query: {
+            uid:that.UID,
+            method:"POST"
+          }
+        });
+
+        if (json.data.code == 200) {
+         
+            that.hasCar = json.data.data[0];       
+            that.is_hasCar = 1; 
+            that.cardListLoading = true;  
+
+        }else if(json.data.code == 201){
+            that.is_hasCar = 0;  
+        } else {
+          tip.error(json.data.msg);
+          that.is_hasCar = 0;                                                                    
+        }          
+        wepy.stopPullDownRefresh();  
+        that.$apply();
+
+    }
+    async getChildCate(page) { 
+        let that = this;
+        const json = await api.GetList({                                        
+          query: {
+            uid:this.UID,
+            page:page || 1,     
+            size:50, 
+            types:that.type123,
+            products:that.products123,
+            method:"POST"
+          }
+        });
+
+        if (json.data.code == 200) {
+          that.ListP =[...that.ListP,...json.data.data.list];
+          that.page_total = json.data.data.total; 
+          that.cardListLoading = true;
+          // 判断数据是否为空
+          if(that.ListP.length>=1){
+              that.no_detail = 1;
+          }else{
+              that.no_detail = 0;
+          }
+          tip.loaded();
+          if (json.data.data.total == 0) {                                              
+            //暂无信息
+            that.is_empty = true;
+          }
+
+        } else {
+          tip.error(json.data.msg);
+          that.no_detail = 0;
+        }
+        wepy.stopPullDownRefresh();   
+        that.$apply();
+  }
+
+  async swichNavSwitch(e){
+    console.log(e.currentTarget.dataset.index);
+    this.currentNavbar = e.currentTarget.dataset.index;           
+    this.showfilter = true;
+
+  }
+  async swichNav(e) {    
+      this.showfilter = false;       
+      this.currentPage = 1;
+      console.log(e.currentTarget.dataset.type);
+      if(e.currentTarget.dataset.type == 11){
+          this.navindex = e.currentTarget.dataset.navindex;
+          if(this.navindex == -1){
+            this.navbar[0] = "主营产品";
+          }else if(this.navindex == 100){
+            this.navbar[0] = "主营产品";
+            this.ListP = [];
+            this.showDone = false;
+          }else{
+            this.navbar[0] = e.currentTarget.dataset.title; //设置标题栏动态改变
+            this.ListP = [];
+            this.showDone = false;                
+          }
+          this.products123 = e.currentTarget.dataset.title;
+      }else{
+          this.sortindex = e.currentTarget.dataset.navindex;
+          if(this.sortindex == -1){
+            this.navbar[1] = "公司类型";
+          }else if(this.sortindex == 100){
+            this.navbar[1] = "公司类型";
+            this.ListP = [];
+            this.showDone = false;
+          }else{
+            this.navbar[1] = e.currentTarget.dataset.title; //设置标题栏动态改变
+            console.log(this.navbar);
+            this.ListP = [];
+            this.showDone = false;                
+          }
+          this.type123 = e.currentTarget.dataset.title;
+      }
+      
+      this.getChildCate(this.currentPage);
+             
+    }
+
+    
+  async hideFilter() {                               
+    this.showfilter = false;
+  }
+ 
+
+  //获取栏目
+    async getNavlist(uId){
+      let that = this;                                  
+      const res = await api.GetTypes({     
+        query: {
+          uid: uId,
+          method:"POST"
+        }
+      });   
+      if (res.data.code == 200) { 
+        let data = res.data.data;     
+        that.navBarType = data.types;
+        that.navBarProducts = data.products;
+        console.log(that.navBarProducts);                
+      } 
+      that.$apply();        
+    }
+  onPullDownRefresh(){
+    this.products123 = 0;
+    this.type123 = 0;
+    this.navbar[1] = "公司类型";
+    this.navbar[0] = "主营产品";
+    this.navindex =-1;
+    this.sortindex =-1;
+    this.showDone = false;  
+    this.ListP = [];
+    this.getChildCate(this.currentPage)
+    this.getCarlist(this.UID);
+    this.currentPage = 1;
+    this.$apply(); 
+  }
+
+  //小程序分享
+    onShareAppMessage(res) {
+     
+        wx.showShareMenu({
+          withShareTicket: true
+        })
+
+        return {
+
+            title:"辅料圈",
+            path:'/pages/card', 
+        }
+ 
+      }      
+
+  onLoad() {
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    that.UID =  sys_id.uid;
+    that.getChildCate(); 
+    that.getNavlist(that.UID);
+    	
+    that.showDel = false;
+    that.showReturn= false;                                                 
+    that.ListP = [];
+    that.$apply();
+  } 
+
+  
+
+  onShow() { 
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    if(sys_id.uid == null || sys_id.uid == 0 || sys_id.uid == 'undefined'){
+         wx.navigateTo({
+          url: '/pages/authorize'                                           
+        })  
+    }
+    if(that.init > 0){
+      that.onLoad;
+    }
+    that.init+=1;
+    that.getCarlist();
+  }
+  
+  computed = {
+
+  }
+  methods = {
+    fl_map(){
+        app.aldstat.sendEvent('卡片模式');
+    },
+    play(){
+       wx.navigateTo({
+          url: '/pages/avator?uid='+this.c_uid                                                    
+        })
+        this.show_c = false;
+        this.car_msg = {};
+        this.$apply()
+      },
+      cancel(){
+        this.show_c = false;
+        this.car_msg = {};
+        this.$apply()
+      },
+      translateMarker() {
+        this.mapCtx.translateMarker({
+          markerId: 0,
+          autoRotate: true,
+          duration: 1000,
+          destination: {
+            latitude: 23.10229,
+            longitude: 113.3345211
+          },
+          animationEnd() {
+            // console.log('animation end')
+          }
+        })
+      },
+      markertap(e) { 
+        this.show_c = true;
+        this.getCarlist1(e.markerId);
+        console.log(e.markerId)
+        this.c_uid = e.markerId;
+        this.$apply()
+      },
+      changeB(){
+        wepy.navigateTo({
+          url: '/pages/map_car'                                                        
+        })
+      }
+  }
+  events = {
+
+  }
+
+  props = {
+    ListP: []
+  }
+
+  //加载更多
+  onReachBottom() {
+    let that = this;
+    that.showLoading = true;
+    if(that.page_total == that.currentPage){
+        that.showDone = true;
+    }
+
+    //判断总页数是否大于翻页数
+    if ((that.page_total) > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.preventRepeatReuqest = true;
+      that.currentPage++;
+      that.getChildCate(that.currentPage,that.UID);
+      that.preventRepeatReuqest = false;
+    } else {
+      that.showLoading = false;
+    }
+  };
+
+
+}
+</script>
+<style lang="less">
+  .opactiv{
+    opacity: 0;
+  }
+  .classify_detail{
+      width: 100%;
+      display: inline-block;
+      background-color:#F3F3F3;  
+  }
+  .cardlist{ 
+    .cardnone{
+        width:100%;
+        height:138rpx;
+        position:relative;
+        background:url("https://api.fuliaoquan.com/public/images/v1/group1.png") no-repeat;
+        background-size:115% 130%;
+        -moz-background-size:112% 119%;
+        background-position:-30rpx -15rpx;
+ 
+        image.icort{
+        position:absolute;
+        top:42rpx;
+        right:36rpx;
+        width:40rpx;    
+        height:58rpx; 
+        }
+        .cardtl{
+             
+        width:50%;
+        position:absolute;
+        top:33rpx;
+        left:206rpx;
+        }
+    }
+    .cardtl{ 
+        text-align:left;
+        line-height:42rpx;
+        font-weight:bold;  
+        .cardtxt{
+            font-size:24rpx;
+            color:#999;
+        }
+    }
+
+  }  
+ 
+    .navScondGrey {
+      position: fixed;
+      width: 100%;
+      top: 150rpx;
+      z-index: 12;      
+      background: rgba(0, 0, 0, 0.5);
+      height:100%;
+
+    }
+    .navli {
+      width: 20%;
+      padding: 10rpx 0;
+      border-radius: 5rpx;
+      border: 1rpx solid #cccccc;
+      text-align: center;
+      line-height:36rpx; 
+      font-size: 28rpx; 
+      margin: 0 4% 24rpx 0;
+    }
+    .navScond {
+      position: fixed;
+      width:100%;
+      top:120rpx;
+      left:0;
+      z-index: 99;
+    }
+    .navScond .swiper-box {   
+      position: absolute;                   
+      width: 100%;                                    
+      z-index: 13;
+      overflow: hidden;
+      max-height: 176rpx;                                           
+    }
+    .navul {
+      width: 96%;
+      display: flex;
+      justify-content: flex-start;
+      flex-wrap: wrap;
+      background:#f9f9f9;
+      padding: 12rpx 0 34rpx 34rpx;
+      .active {
+      color: #c7000b;
+      border: 1rpx solid #c7000b; 
+      }
+    }
+
+    .navbar {
+        width:100%;  
+        height:118rpx;
+        padding-left:34rpx;
+        position:fixed;
+        background: #f9f9f9;
+        top:0;
+        left:0;
+        z-index: 90;
+      .active {
+        color: #000;
+      }
+    }
+    .navBox {
+      width: 20%;
+      height: 118rpx;
+      position: relative;
+      font-family: PingFang-SC-Medium;
+      color: #333;
+      font-size: 26rpx;
+      line-height: 114rpx;
+      image {
+        width: 14rpx;
+        height: 11rpx;
+        margin-left: 9rpx;
+        margin-bottom: 4rpx;
+      }
+    }
+
+    page{
+    background: white;
+      width:100%;
+      height:100%;
+    }
+  .map{
+    width:100%;
+    height:100%;
+  }
+  .controls,.time{
+    width:100%;
+    height:100%;
+    background:rgba(0,0,0,0.6);
+    position: absolute;
+    bottom:0;
+    right:0;
+  }
+  .time{
+    height:135rpx;
+    background:#fff;
+    bottom:0rpx;
+  }
+  .pause{
+    height:98rpx;
+    padding:0 5%;
+    line-height: 106rpx;
+  }
+  .play{
+    padding:20rpx 5%;
+  }
+  .type_p{
+    width:90%;
+    margin:20rpx auto;
+    padding:0 10rpx;
+  }
+  .type_p_c{
+    height:88rpx;
+    width:80%;
+    background:rgba(255,255,255,0.6);
+    padding:0 10rpx;
+    cover-view{
+      width:90rpx;
+    }
+  }
+  .img13{
+    line-height: 20rpx;
+    position: relative;
+    top:5rpx;
+    right:-6rpx;
+    display: inline-block;
+  }
+  .img44{
+    margin-right: 0;
+  }
+</style>
+
+
+

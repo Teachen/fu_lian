@@ -1,0 +1,248 @@
+<!--绑定手机-->
+<template>
+  
+  <view wx:if="{{is_mobile ==0}}">
+    <form bindsubmit="formSubmit">
+      <view class="section">
+        <view class="section_title">手机号</view>
+        <input name="phone" type="number" bindinput="phoneInput" value="{{}}" placeholder="请输入手机号码" maxlength="11" focus="true" />
+      </view>
+      <view class="section">
+        <view class="section_title">验证码</view>
+        <input class="code" name="code" type="number"  placeholder="请输入验证码" />
+        <view class="btn send_code">
+          <text wx:if="{{sendMsgDisabled}}">{{time+'秒后获取'}}</text>
+          <text @tap="sendCode" wx:else="{{sendMsgDisabled}}">发送验证码</text>
+        </view>
+      </view>
+      <view class="btn_comfire">
+        <button class="button type_yellow" formType="submit">确定</button>
+      </view>
+    </form>        
+    <view class="c666 text_c">
+      点击确定，即表示已阅读并同意
+      <navigator url="/pages/user_rule" hover-class="none" class="cf09">   
+      《用户协议》
+      </navigator> 
+    </view>             
+  </view>
+  <view class="no_data c666 fz32" wx:if="{{is_mobile == 1}}">
+    <image src="https://api.fuliaoquan.com/public/images/v3/phone_1.png"></image>
+   您已绑定手机号码，无需再次操作。
+  </view>
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip';
+import util from '@/utils/util';
+import {
+  USER_SPECICAL_INFO,
+  USER_UID
+} from '@/utils/constant';
+
+
+export default class Register extends wepy.page {
+  config = {
+    navigationBarTitleText: '绑定手机',
+    navigationBarBackgroundColor: '#F2F2F2'
+  }
+  components = {
+
+  }
+
+  data = {
+    phone : "",
+    randCode:"",
+    sendMsgDisabled: false,
+    uid:null,
+    time: 60,
+    m_type:1,
+    is_has:0,
+    is_mobile:1
+  }
+
+  async sendVerifyCode() {
+    let Uid = wepy.getStorageSync(USER_UID);
+
+    this.randCode = Math.floor(Math.random()*(999999));
+    if( this.randCode<10){
+      this.randCode = "00000"+this.randCode;
+    }else if( this.randCode<100){
+      this.randCode = "0000"+this.randCode;
+    }
+    else if( this.randCode<1000){
+      this.randCode = "000"+this.randCode;
+    }
+    else if( this.randCode<10000){
+      this.randCode = "00"+this.randCode;
+    }
+    else if( this.randCode<100000){
+      this.randCode = "0"+this.randCode;
+    }
+
+    this.uid = Uid.uid;
+    const json = await api.SendSms({
+      query: {
+        code:this.randCode,
+        mobile: this.phone,
+        uid:this.uid,
+        method:"POST",
+        m_type:1
+      }
+    });
+    if (json.data.code == 200) { 
+      tip.success("发送成功!");
+      this.sendMsgDisabled = true;
+      this.$apply();
+    } else if(json.data.code == 201){
+      tip.error(json.data.msg)
+    }else{
+      tip.error(json.data.msg)
+    }
+  }
+
+  async registerUser(phone,code) {
+        let that = this;
+        let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};      
+        let openId = userSpecialInfo.openid;
+        const json = await api.IsMobile({
+          query: {
+            uid: this.uid,
+            mobile:phone,
+            method:"POST"
+          }
+        });
+
+        if (json.data.code == 200) {           
+          wx.switchTab({  
+            url: '/pages/info'  
+          }); 
+          let Uid = wepy.getStorageSync(USER_UID);  
+          Uid.mobile = phone;
+          Uid.is_mobile = 1;
+          wepy.setStorageSync(USER_UID, Uid); 
+          console.log("绑定成功");
+          that.$apply();
+        } else {
+          tip.error(json.data.msg)
+        }
+        that.showLoading = false;
+      }
+
+      async getUserInfo() {
+        let that = this;
+        let calore = wepy.getStorageSync(USER_UID);  
+        that.UID = calore.uid; 
+         const json = await api.IsMobileOk({     
+          query: {                                
+            uid: that.UID,
+            method:"POST"
+          }
+        });
+         if(json.data.code == 200){ 
+            that.is_mobile = json.data.data.is_mobile;
+            that.$apply(); 
+         } 
+    }
+  onLoad() {
+    let that = this;
+    that.getUserInfo();
+  }
+  computed = {
+
+  }
+  methods = {
+
+    phoneInput(e) {
+      this.phone = e.detail.value;
+    },
+    sendCode(e) {
+      if (this.phone == "") {
+        tip.alert("输入手机号码");
+        return false;
+      }else if(util.vailPhone(this.phone) == false){
+          tip.alert("输入正确号码");
+          return false;
+      }
+
+      console.log(util.vailPhone(this.phone));
+      this.sendVerifyCode();
+      let that = this;
+      let interval = setInterval(() => {
+        if ((that.time--) <= 0) {
+          that.time = 10;
+          that.sendMsgDisabled = false;
+          clearInterval(interval);
+          that.$apply();
+        }
+        that.$apply();
+      }, 1000);
+    },
+    formSubmit(e) {
+      let that = this;
+      let phone = e.detail.value.phone;
+      let code = e.detail.value.code;
+      if (phone == "") {
+        tip.alert("输入手机号码");
+        return false;
+      }
+      if (code == "") {
+        tip.alert("输入验证码");
+        return false;
+      }else if(code !=this.randCode){
+        tip.alert("验证码错误");
+        return false;
+      }
+      that.registerUser(phone,code);
+      console.log('form发生了submit事件，携带数据为：', e.detail.value)
+    }
+  }
+}
+
+</script>
+<style lang="less">
+.text_c{
+  text-align: center;
+  margin-top:36rpx;
+  font-size: 24rpx;
+  .cf09{display: inline-block;}
+}
+.section {
+  display: flex;
+  align-items: center;
+  padding: 20rpx 30rpx;
+  border-bottom: 1px solid #dbdbdb;
+  background: #fff;
+  .section_title {
+  color:#1a1a1a;
+  display:inline-block;
+  width:122rpx;
+  margin-right:20px;
+  }
+  .btn {
+    padding: 15rpx 10rpx;
+    border: 1px solid #999;
+    -moz-border-radius: 5rpx;
+    /* Firefox */
+    -webkit-border-radius: 5rpx;
+    /* Safari 和 Chrome */
+    border-radius: 5rpx;
+    /* Opera 10.5+, 以及使用了IE-CSS3的IE浏览器 */
+    color: #999;
+  }
+  .send_code {
+    margin-left: 40rpx;
+  }
+}
+
+.btn_comfire {
+  margin-top: 64rpx;
+  padding: 0 24rpx;
+}
+
+.code {
+  width: 300rpx;
+}
+
+</style>

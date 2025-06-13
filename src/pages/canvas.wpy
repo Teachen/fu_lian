@@ -1,0 +1,393 @@
+<template>
+  <!-- <view style="height:500px;overflow:auto;position: relative;"> -->
+    <canvas canvas-id='myCanvas' class='canvas-content' style='height:{{totalHeight * canvasScale}}px;width:{{windowWidth}}px'>
+    </canvas>
+  <!-- </view> -->
+  <view class='save-button1' bindtap='saveImage'>
+    <view class="button1">保存到手机相册，再转发朋友圈</view>
+  </view>  
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip'; 
+import {
+  USER_INFO,
+  USER_SPECICAL_INFO,
+  USER_UID
+} from '@/utils/constant';
+const app = getApp();
+export default class canvas extends wepy.page {
+  config = {
+    navigationBarTitleText: '海报',
+    navigationBarBackgroundColor: '#F2F2F2'
+  }
+
+  data = {
+    src2:"",
+    windowWidth: 0,
+    windowHeight: 0,
+    totalHeight: 0,
+    canvasScale: 1.0,
+    url:"",
+    id:0,
+    save:1
+  }
+  
+  async getToken(id){
+    let that = this;
+    const json = await api.GetWxCode({
+              query:{
+                id:that.id,
+                scene:"?id="+that.id,
+                page:"pages/postDetail",
+                width:280,
+                method:"POST"                   
+              }
+            });       
+            if (json.data.code == 200) {
+                let t = json.data.data.url;
+                that.url = t;
+                
+                let scale = this.windowWidth / 375.0;
+                let ctx = wx.createCanvasContext('myCanvas');
+                 // 绘制白色底
+                ctx.setFillStyle('rgba(255,255,255,1)');
+                let WxCodeImageWidth = parseInt(100 * scale)
+                let WxCodeImageHeight = parseInt(100 * scale)
+                ctx.fillRect(225 * scale, 431 * scale, WxCodeImageWidth, WxCodeImageHeight)
+
+                ctx.draw(true)
+                
+                let src3 = t + `?imageView/2/w/${WxCodeImageWidth}/h/${WxCodeImageHeight}`
+                console.log(src3)
+                wx.getImageInfo({  
+                  src: src3,
+                  success: function (res) {
+                    ctx.drawImage(res.path, 225 * scale, 431 * scale, WxCodeImageWidth, WxCodeImageHeight)
+                    ctx.draw(true)
+                  }
+                })
+               
+            } else {
+
+            }
+           
+  }
+
+  async getDetail(ctx) {
+      
+        console.log("执行获取详情")
+        const json = await api.GetDetails({
+          query: {
+            uid:599,
+            id:this.id,
+            method:"GET",
+            showPL:1
+          }
+        });
+        if (json.data.code == 200) {
+            let scale = this.windowWidth / 375.0;
+            let topImageUrl = json.data.data.img[0];
+            let mallUrl = json.data.data.user.avatar;
+            let name = json.data.data.user.name;
+            let content = json.data.data.content;
+            let typea = json.data.data.type.typeid_title;
+            let typeb = json.data.data.type.typeid2_title,fuliaoquan = "辅料圈";
+            // 首先要绘制顶部的背景图片，因为它在最底层，然后才能绘制其他内容
+            let topImageWidth = parseInt(375 * scale) // 因为小数有时候会请求不到图片，所以转成int
+            let topImageHeight = parseInt(375 * scale)
+            let src1 = topImageUrl + `?imageView/2/w/${topImageWidth}/h/${topImageHeight}`
+            wx.getImageInfo({
+              src: src1,
+              success: function(res) {
+                ctx.drawImage(res.path, 0, 0, topImageWidth, topImageHeight)
+                ctx.draw(true)
+              }
+            })
+
+            
+            //name
+            ctx.setFillStyle('#fff');
+            ctx.setFontSize(14 * scale);
+            this.canvasTextAutoLine(name, ctx, 80 * scale, 410 * scale, 35 * scale, 258 * scale, 1)
+
+            //content
+            ctx.setFillStyle('#fff');
+            ctx.setFontSize(12 * scale);
+            this.canvasTextAutoLine(content, ctx, 20 * scale, 480 * scale, 22 * scale, 150 * scale, 4)
+
+            //  // address
+            // ctx.setFillStyle('#fff');
+            // ctx.setFontSize(13 * scale);
+            // this.canvasTextAutoLine(fuliaoquan, ctx, 20 * scale, 580 * scale, 22 * scale, 305 * scale, 1)
+
+             // 长按识别
+            ctx.setFillStyle('#fff');
+            ctx.setFontSize(13 * scale);
+            this.canvasTextAutoLine('长按扫码查看详情', ctx, 220 *scale,551*scale, 12 * scale, 305 * scale, 1)
+
+            // typea
+            ctx.setFillStyle('#fff');
+            ctx.setFontSize(10 * scale);
+            this.canvasTextAutoLine(typea, ctx, 85 *scale,441*scale, 7 * scale, 305 * scale, 1)
+
+            // typeb
+            ctx.setFillStyle('#fff');
+            ctx.setFontSize(10 * scale);
+            this.canvasTextAutoLine(typeb, ctx, 125 *scale,441*scale, 7 * scale, 305 * scale, 1)
+
+
+            // ctx.beginPath()
+            // ctx.setLineWidth(0.5)
+            // ctx.setStrokeStyle('white')
+            // ctx.moveTo(80, 430);
+            // ctx.lineTo(110, 430);
+            // ctx.lineTo(110, 445);
+            // ctx.lineTo(80, 445);
+            // ctx.closePath();
+            // ctx.stroke();
+
+            // ctx.beginPath()
+            // ctx.setLineWidth(0.5)
+            // ctx.setStrokeStyle('white')
+            // ctx.moveTo(120, 430);
+            // ctx.lineTo(150, 430);
+            // ctx.lineTo(150, 445);
+            // ctx.lineTo(120, 445);
+            // ctx.closePath();
+            // ctx.stroke();
+           
+            //头像
+            let mallImageWidth = parseInt(48 * scale)
+            let mallImageHeight = parseInt(48 * scale)
+            let src5 = mallUrl + `?imageView/2/w/${mallImageWidth}/h/${mallImageHeight}`
+            console.log(src5);
+            wx.getImageInfo({
+              src: src5,
+              success: function (res) {
+                ctx.drawImage(res.path, 20 * scale, 400*scale, mallImageWidth, mallImageHeight)
+                ctx.draw(true)
+              }
+            })
+
+            ctx.draw(true)
+
+           
+
+        } else {
+          console.log("执行获取详情失败")
+          
+        }
+       
+    }
+  onLoad(option) {
+
+    let that = this;
+    console.log(option);
+   // 获取到屏幕的宽高等信息
+     let id = option.id;
+     that.id = id;
+     // that.model.topImageUrl = option.img;
+     
+    wx.getSystemInfo({
+      success: function(res) {
+        console.log(res);
+        that.windowWidth = res.windowWidth;
+        that.windowHeight= res.windowHeight;
+      }
+    })
+
+   that.begainDrawShareImage();
+   
+
+  }
+
+   /**
+       * 绘制分享海报
+       */
+      begainDrawShareImage(){
+        var that = this
+        // 适配屏幕
+        
+        let scale = this.windowWidth / 375.0;
+        console.log(scale)
+        console.log(this.windowWidth)
+     
+        this.totalHeight=617* scale;
+        console.log(this.totalHeight)
+        // 获取Canvas
+        let ctx = wx.createCanvasContext('myCanvas');
+       this.getToken();
+       this.getDetail(ctx);
+        console.log(ctx);
+
+        // 放大 因为不放大的话，生成的分享图会模糊。暂时先注释
+        ctx.scale(this.canvasScale, this.canvasScale)
+
+       
+
+        that.drawOtherContent(ctx, scale)
+        that.drawOtherImage(ctx,scale)
+      }
+
+      // 绘制除了图片之外的剩余内容
+      drawOtherContent(ctx, scale) {
+
+        // 绘制中间的灰色背景
+        ctx.setFillStyle('rgba(68,70,80,1)')
+        ctx.fillRect(0 * scale, 0 * scale,  this.windowWidth * scale,  this.windowHeight * scale)
+        ctx.draw(true)
+      }
+
+      // 绘制剩余图片
+      drawOtherImage(ctx, scale) {
+
+        let that = this
+
+        
+      }
+
+      // 绘制只有一行的文字
+      drawNormalText(ctx, str, x, y, font, style, align, baseLine) {
+        ctx.setFontSize(font);
+        ctx.setFillStyle(style);
+        ctx.setTextAlign(align);
+        ctx.setTextBaseline(baseLine);
+        ctx.fillText(str, x, y);
+      }
+      canvasTextAutoLine(str, ctx, initX, initY, lineHeight, maxWidth, row = 1) {
+        var lineWidth = 0;
+        var lastSubStrIndex = 0;
+        var currentRow = 1;
+        for (let i = 0; i < str.length; i++) {
+          lineWidth += ctx.measureText(str[i]).width;
+          if (lineWidth > maxWidth) {
+            currentRow++;
+            let newStr = str.substring(lastSubStrIndex, i)
+            if (currentRow > row && str.length > i) {
+              newStr = str.substring(lastSubStrIndex, i - 2) + '...'
+            }
+            ctx.fillText(newStr, initX, initY);
+            initY += lineHeight;
+            lineWidth = 0;
+            lastSubStrIndex = i;
+
+            if (currentRow > row) {
+              break;
+            }
+          }
+          if (i == str.length - 1) {
+            ctx.fillText(str.substring(lastSubStrIndex, i + 1), initX, initY);
+          }
+        }
+      }
+
+        // 保存图片
+      saveImage(){
+        let that = this
+        wx.canvasToTempFilePath({
+          x: 0,
+          y: 0,
+          width: this.windowWidth * this.canvasScale,
+          height: this.totalHeight * this.canvasScale,
+          canvasId: 'myCanvas',
+          success: function (res) {
+            if(that.save == 1){
+              that.saveImageToPhotos(res.tempFilePath);
+            }else{
+              wx.showToast({
+                title: '图片以保存到您的相册',
+                icon: 'none',
+                duration: 500
+              })
+            }            
+          },
+          fail: function (res) {
+            wx.showToast({
+              title: '图片生成失败',
+              icon: 'none',
+              duration: 2000
+            })
+          }
+        })
+      }
+
+      saveImageToPhotos(tempFilePath) {
+        wx.saveImageToPhotosAlbum({
+          filePath: tempFilePath,
+          success:function() {
+            wx.showToast({
+              title: '保存成功，从相册中分享到朋友圈吧',
+              icon: 'none',
+              duration: 1000
+            })
+            setTimeout(function(){
+              wx.navigateBack({
+                delta: 1
+              })
+            },2500)
+          },
+          complete:function(){
+            
+            
+          },
+          fail: function (res) {
+              wx.showToast({
+                title: '图片保存失败',
+                icon: 'none',
+                duration: 2000
+              })
+          }
+        })
+      }
+
+
+  methods = {
+
+      
+        
+
+  }
+
+  onShow(){ 
+    
+  }
+  computed = {
+
+  }   
+ 
+}
+
+</script>
+<style lang="less">
+page{
+  background:rgba(68,70,80,1);
+}
+.canvas-content{
+  display: flex;
+  position: absolute;
+  top: -170rpx;
+  left: 0;
+  /* left: 500%;  分享图不显示在页面上面，就将画布设置在页面之外*/
+}
+.save-button1 {
+  position: fixed;
+  width:100%;
+  bottom: 30rpx;
+  right:0rpx;
+  margin:0 auto;
+  border-radius: 10rpx;
+  z-index: 9999;
+}
+.save-button1 .button1{
+  width:100%;
+  border-radius: 10rpx;
+  padding:20rpx 0;
+  text-align: center;
+  background:#c7000b;
+  color:#fff;
+}
+
+
+</style>

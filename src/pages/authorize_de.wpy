@@ -1,0 +1,198 @@
+<template>
+  <view class="authorize-contianer">
+    <image class="authorize-icon" src="https://api.fuliaoquan.com/public/images/v2/logo.jpg"/> 
+    <view class="fz32 cf09" style="position: relative;top:-22rpx;">辅料圈</view>
+    <view class="auth-item" style="font-size: 45rpx;margin-top: 63rpx;">辅料人的交流圈</view>
+    <view class="btn-authorize">
+      <button open-type="getUserInfo" lang="zh_CN" class="btnShallow" hover-class="btnDeeper" bindgetuserinfo="onGotUserInfo">微信登录</button>  
+    </view>
+    <button class="btnError" open-type='contact' hover-class="none" session-from="{{nickAvator}}"> <image src="https://api.fuliaoquan.com/public/images/v3/authError.png"/> 有问题，点击联系客服 </button> 
+  </view>
+</template> 
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import {
+  SYSTEM_INFO,
+  USER_SPECICAL_INFO,
+  USER_INFO,
+  USER_UID
+} from '@/utils/constant';  
+export default class Authorize extends wepy.page {                                                                                                                  
+  config = {
+    navigationBarTitleText: '授权登录',
+  }
+
+  data = {
+    id:0,
+    type:2,
+    type_share:1,
+    uid:603,
+    nickAvator: {}
+  }
+  
+  async onLoad(option) { 
+    this.id = option.id;
+    this.type = option.type;
+    this.uid = option.uid2;
+    this.type_share = option.type_share;
+    var that = this;
+    that.nickAvator = {
+      "nickName": that.nickName,
+      "avatarUrl": that.avatarUrl
+    }
+    that.Version = wepy.$instance.globalData.version; 
+    that.nickAvator = JSON.stringify(that.nickAvator);  
+
+    let res = await wepy.getSetting()
+    if ((res.authSetting)['scope.userInfo']) {
+      let userInfo = wepy.getStorageSync(USER_INFO)         
+      if (!userInfo.nickName) {
+        let data  = await wepy.getUserInfo()
+        if (data) {
+          wepy.setStorageSync(USER_INFO, data.userInfo) 
+        }
+        let res = await wepy.login()
+        if (res.code) {
+          let systemInfo = wepy.getSystemInfoSync();
+          wepy.setStorageSync(SYSTEM_INFO, systemInfo);
+          let rlt = await api.wxJsCode2Session({
+            query: {
+              code: res.code,
+              method:"POST",
+              nickName: e.detail.userInfo.nickName
+            }
+          })         
+                  
+          }
+        }
+
+        if(this.type == 1){
+          
+          wepy.redirectTo({
+            url: '/pages/postDetail?a=2&id='+this.id                                                       
+          })
+        }else{ 
+          wepy.redirectTo({
+            url: '/pages/avator?a=2&buildId=0&uid='+this.id                                                       
+          })
+        } 
+      }	
+      
+    }
+  
+    async asynconGotUserInfo(detail) {   
+      let res = await wepy.login(); 
+      if (res.code) {
+        wepy.setStorageSync(USER_INFO, detail.userInfo);
+        let systemInfo = wepy.getSystemInfoSync();
+        wepy.setStorageSync(SYSTEM_INFO, systemInfo);
+        
+        // 获取用户openid
+        let rlt = await api.wxJsCode2Session({
+          query: {
+            code: res.code,
+             method:"POST",
+            nickName: detail.userInfo.nickName
+          }
+        }) 
+
+        // 存储数据入库用户信息
+        let user_save = await api.addUser({
+            query: {             
+               method:"POST",
+               avatar: detail.userInfo.avatarUrl,
+               country: detail.userInfo.country,
+               province: detail.userInfo.province,
+               city: detail.userInfo.city,
+               gender: detail.userInfo.gender,               
+               name:  detail.userInfo.nickName,
+               openid: rlt.data.data.openid,
+               type:this.type_share,
+               uid:this.uid,
+               unionid:rlt.data.data.unionid
+            }
+          }); 
+        wepy.setStorageSync(USER_UID, user_save.data.data); 
+        let userUid = wepy.getStorageSync(USER_UID); 
+        if (rlt.data) {
+          let data = rlt.data;                              
+          if (data.data.openid) {
+            wepy.setStorageSync(USER_SPECICAL_INFO, data.data);
+            let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO);  
+            console.log(userSpecialInfo);                                                     
+           
+            if(this.type == 1){
+              wepy.redirectTo({
+                url: '/pages/postDetail?a=2&id='+this.id                                                       
+              })
+            }else{ 
+              wepy.redirectTo({
+                url: '/pages/avator?a=2&buildId=0&uid='+this.id                                                       
+              })
+            }
+
+          }
+        } else {
+          let res = await wepy.showModal({
+            title: 'appid有误',
+            content: '授权失败'
+          })
+          if (res.confirm) {
+            // wepy.redirectTo({
+            //   url: '/pages/postDetail?a=2&id='+this.id
+            // })
+            if(this.type == 1){
+              wepy.redirectTo({
+                url: '/pages/postDetail?a=2&id='+this.id                                                       
+              })
+            }else{ 
+              wepy.redirectTo({
+                url: '/pages/avator?a=2&buildId=0&uid='+this.id                                                       
+              })
+            }
+
+          }
+        }
+
+      } 
+  }
+  methods = {
+    onGotUserInfo(e) {
+      if(e.detail.errMsg == 'getUserInfo:fail auth deny') { 
+          wx.navigateTo({
+            url: '/pages/authorize_de?id='+this.id+"&type="+ this.type
+          }) 
+      }else{ 
+        var detail = e.detail;
+        this.asynconGotUserInfo(detail);
+      }
+    }
+  } 
+}
+</script>
+<style lang="less">
+  page {
+    height: 100%;
+  }
+  .authorize-contianer {
+  height: 100%;
+  background: #fff;
+  text-align: center;
+  padding-top: 100rpx;
+  .authorize-icon {
+    width: 128rpx;
+    height: 128rpx;
+    display: block;
+    margin: 0 auto;
+    padding-bottom: 10rpx;
+  }
+  .auth-item {
+    padding: 5rpx 0;
+  }
+  .btn-authorize {
+    width:61%;
+    margin: 200rpx auto;
+  }
+}
+</style>

@@ -1,0 +1,248 @@
+<template>
+    <view wx:if="{{bindShow}}"> 
+        <view class="tipGrey"></view>
+         <!-- 拨打电话弹窗 -->
+          <view class="jumpCallWindow" style="position:relative;" wx:if="{{bindShow}}">   
+              <view class = "bindCall"> 
+                    <view class="disPhone" bindtap="disbindCall"> 
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico_del_iphone.png"/>   
+                    </view>
+
+                    <view class="num nul1" wx:if="{{bindTel == 1}}">{{callTitle}}</view>
+                    <view class="num" wx:if="{{bindTel == 1}}">{{callNum}}</view>
+                    <view class="btn" wx:if="{{bindTel === 1}}"> 
+                        <text @tap="keeviewPacopy" style="border-right:1rpx solid #ddd;"> 复制 </text> 
+                        <text @tap="keeviewPacall"> 拨打 </text>
+                    </view>
+
+                    <view class="num nul1 c333 fz34" wx:if="{{bindScore == 1 || bindScore == 2}}">{{bindScore == 1?'显示号码':'原帖刷新'}}，需消耗{{bindScore == 1?'1':'20'}}个积分</view>
+                    <view class="num fz28 c666" wx:if="{{bindScore == 1 || bindScore == 2}}">当前积分：{{score}} <span bindtap="getRule">
+                    <navigator style="display: inline-block;" class="item" url="/pages/user_rule?id=22">
+                      （查看积分规则）
+                    </navigator>
+                    </span></view>
+                    <view class="btn" wx:if="{{bindScore == 1 || bindScore == 2}}"> 
+                        <text @tap="disbindCall" class="c333" style="border-right:1rpx solid #ddd;"> 取消 </text> 
+                        <text @tap="tap1" class="c333" wx:if="{{ample && bindScore == 1}}"> 确认 </text>
+                        <text @tap="tap2" class="c333" wx:if="{{ample && bindScore == 2}}"> 确认 </text>
+                        <text wx:if="{{!ample}}" class="c666"> 积分不足 </text>
+                    </view> 
+              </view>   
+          </view>    
+    </view>
+    <view wx:if="{{show_banner}}" class="tipGrey tipGrey2"> 
+          <view style="margin-top:{{windowHeight>624?25:11}}%;" wx:if="{{show_banner}}">
+            <navigator  url="{{url_t}}" hover-class="none"  @tap="close_c">   
+                <view  style="width:600rpx;height:860rpx; margin:0 auto;"> 
+                    <image style="width:100%;height:100%" mode="aspectFill" src="{{pic}}"/>
+                </view>
+            </navigator>
+              <view style='width: 70rpx;height:70rpx;margin: 62rpx auto 0 auto;'  @tap="close_b">
+                  <image style='width:100%;height:100%;' src="https://api.fuliaoquan.com/public/images/v1/ico-close2.png"/>
+              </view>   
+          </view>    
+    </view>
+    <view wx:if="{{bindShow2}}"> 
+        <view class="tipGrey"></view>
+         <!-- 拨打电话弹窗 -->
+          <view class="jumpCallWindow" style="position:relative;" wx:if="{{bindShow2}}">   
+              <view class = "bindCall"> 
+                    <view class="disPhone" bindtap="disbindCall"> 
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico_del_iphone.png"/>   
+                    </view>
+                    <view class="num nul1 c333 fz34">确定兑换吗？</view>
+                    <view class="num fz28 c333">积分将立即扣减，无法撤销</view>
+                    <view class="btn"> 
+                        <text @tap="disbindCall" class="c333" style="border-right:1rpx solid #ddd;"> 取消 </text> 
+                        <button open-type='contact' session-from="{{nickAvator}}" class="c333 cbt {{sys == 'Android'?'cbt2':''}}" hover-class="none" @tap="tap2"> 
+                          确认
+                        </button>
+                    </view> 
+              </view>   
+          </view>    
+    </view>       
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from "@/utils/tip";    
+import util from '@/utils/util' 
+import {
+  SYSTEM_INFO,
+  USER_SPECICAL_INFO,           
+  USER_INFO,
+  USER_UID
+} from '@/utils/constant';
+export default class oPhone extends wepy.component{
+    data = {
+       
+    };
+    props = {
+      pic: {
+            type: String,
+            default:"",
+            twoWay: true
+        },
+      url_t: {
+            type: String,
+            default:"",
+            twoWay: true
+        },
+      windowHeight: {
+            type: Number,
+            default: 624,
+            twoWay: true
+        },
+        show_banner: {
+            type: Boolean,
+            default: false,
+            twoWay: true
+        },
+        callTitle:{
+          type: String,
+          default: '电话号码：'
+        },
+        // 父向子单向动态传值
+        callNum: {  
+            type: String,
+            default: "",
+            twoWay: true
+
+        },
+        bindShow: {
+            type: Boolean,
+            default: false,
+            twoWay: true
+        },
+        bindShow2: {
+            type: Boolean,
+            default: false,
+            twoWay: true
+        },
+        bindTel: {
+            type: Number,
+            default: 0,
+            twoWay: true
+        },
+        bindScore: {
+            type: Number,
+            default: 0,
+            twoWay: true
+        },
+        score:{
+          type:Number,
+          default:0,
+          twoWay: true
+        },
+        ample:{
+          type:Boolean,
+          default:false,
+          twoWay: true
+        },
+        UID: {  
+          type: String,
+          default: '0'
+        },
+        bannerid: {  
+          type: String,
+          default: '0'
+        },
+        nickAvator: {  
+          type: Object,
+          default: {}
+        },
+        sys: {  
+          type: String,
+          default: ''
+        },
+        
+        
+    };
+    async bannerCount() {
+      let that = this;
+        const json = await api.bannerCount({   
+          query: {
+            id: that.bannerid,
+            uid:that.UID,
+            method:"POST"
+          }
+        });
+
+      if (json.data.code == 200) {          
+        console.log("统计成功");  
+        } else {  
+        console.log("失败");
+      }
+    }
+    methods = {
+
+        keeviewPacopy() {
+          wx.setClipboardData({
+              data: this.callNum,
+              success (res) {
+                
+              }
+          })
+        },
+        keeviewPacall() {
+            wx.makePhoneCall({                                                    
+              phoneNumber: this.callNum
+            });
+        },
+        disbindCall() {
+            this.bindShow = false;
+            this.bindShow2 = false;
+            tip.showTab();
+            this.$apply();     
+        },
+        tap1(){
+            this.$emit('confirmScore')
+        },
+        tap2(){
+            this.$emit('confirmScore')
+        },
+        close_b(){
+          this.show_banner = false;
+          this.$apply(); 
+        },
+        close_c(){
+          this.show_banner = false;
+          this.bannerCount();
+          this.$apply(); 
+        }      
+    }
+ 
+}
+</script>   
+<style lang="less">
+  .nul1{
+    width:69%;
+    margin:0 auto;
+  }
+  .tipGrey2{
+    z-index: 99999;
+    background-color:rgba(0,0,0,0.6);
+    opacity:1;
+  }
+  .cbt{
+      display:inline-block;
+      background-color:transparent;
+      width:49%;height:92rpx;
+      line-height:85rpx;
+      font-size:29rpx;
+      border-top:1rpx solid #ddd;
+      position:relative;
+      padding:0;
+      text-align:center;
+      text-decoration:none;
+      border-radius:0;
+      top:0rpx;
+  }
+  .cbt2{
+     top:38rpx;
+  }
+  .btn{
+    margin-top:10rpx !important;
+  }
+</style>
+

@@ -1,0 +1,532 @@
+  <template>
+    <view class="topSearch flex_s" style="background-color:#fff;">
+      <view class="searchBox"> 
+        <input type="text" focus="{{autofocus}}" placeholder="输入关键词" placeholder-style="color:#999;" bindinput="inputs" bindconfirm="search"  maxlength="20">
+      </view>
+      <view class="search_b" bindtap="pubswichNav" data-key="{{search_k2}}">
+        搜索 
+      </view>
+    </view>
+    <view class="SearchList" style="background-color:#fff;" wx:if="{{showInit}}">
+      <view class="S14">
+        <navigator url="/pages/supply" hover-class="none" url="/pages/supply?typeid=1">
+        <view style="color:#5c85b4;border:1rpx solid #5C85B4;">供应</view>
+        </navigator> 
+
+        <navigator url="/pages/require" hover-class="none" url="/pages/supply?uid={{UID}}&typeid=2">
+        <view style="color:#F56E50;border:1rpx solid #F56E50;">需求</view>
+        </navigator> 
+      </view>
+      <view class="c333">
+        <view class="c333" style="font-size: 28rpx;">热门搜索</view>
+        <view class="S14">
+          <view wx:for="{{hot}}" wx:key="hot" bindtap="pubswichNav" data-key="{{item}}">{{item}}</view>
+        </view>
+      </view>
+      <view class="c333">
+        <view class="c333" style="font-size: 28rpx;">历史记录</view>
+        <scroll-view class="cellContent" scroll-y scroll-with-animation="true"> 
+          <view class="S15" wx:if="{{has_hist}}">
+            <view class="c666"  bindtap="pubswichNav" data-key="{{item}}" wx:for="{{history}}" wx:key="{{history}}">{{item}}</view>
+          </view>
+          <view class="S19" wx:else="{{has_hist}}">
+            <view class="c666">暂无历史记录~~</view>
+          </view>
+        </scroll-view>
+        <view class="clear_history" bindtap = "DelHostyList" wx:if="{{has_hist}}">
+          <image src="https://api.fuliaoquan.com/public/images/v1/del.png">
+          清空历史记录
+        </view>
+      </view>
+    </view>
+
+    <view class="result" style="background-color:#fff;" wx:else="{{showInit}}">
+      <view class="gline"></view>
+      <view class="s16">
+          <view class="c333 fz32 tz">
+              帖子（{{total.invitation}}条）
+          </view>
+          <view wx:for="{{invitation}}" wx:key="{{invitation}}">
+            <view class="flex_s margin_tb">
+              <span class="top_name fz28 c666">
+                <image src="{{item.user.avatar}}" class="img25"/>
+                {{item.user.name}}
+              </span>
+              <span class="fz28 c666">
+                {{item.pubdate}}
+              </span>
+            </view>
+            <navigator url="/pages/postDetail" hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{item.id}}&uid={{UID}}">
+            <view class="fz30 c333 content">
+              <text wx:for="{{item.content}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text>
+            </view>
+            <view class="p_img">
+              <span wx:for="{{item.img}}" wx:for-item="tpitem" wx:key="{{tpitem}}">
+                  <image src="{{tpitem}}" class="img62"/>
+              </span>
+            </view>
+            </navigator>
+          </view>
+           <view class="more_check" wx:if="{{total.invitation > 3}}">
+             <navigator url="/pages/search_more?type=invitation&key={{search_k}}&uid={{UID}}" hover-class="none">
+                查看更多<image src="https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png"/>  
+             </navigator>
+           </view>
+           <view class="S19" wx:if="{{total.invitation == 0}}">
+              <view class="c666 v1">暂时未找到相关信息~~</view>
+           </view>
+      </view>
+      <view class="gline"></view>
+      <view class="s17">
+        <view class="c333 fz32 tz">
+          发帖者（{{total.user}}人）
+        </view>
+        <view wx:for="{{user}}" wx:key="{{user}}">
+          <navigator hover-class="none" url="/pages/avator?uid={{item.id}}">
+          <view class="flex_f m_p">
+              <image src="{{item.avatar}}" class="img44"/>
+              <span class="c333 fz28 topname1">
+                
+                <text wx:for="{{item.name}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text>
+              </span>
+          </view>
+          </navigator>
+        </view>
+        <view class="more_check" style="margin-top: 28rpx;" wx:if="{{total.user > 3}}">
+         <navigator url="/pages/search_more?type=user&key={{search_k}}&uid={{UID}}" hover-class="none">
+            查看更多<image src="https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png"/>
+         </navigator>
+       </view>
+       <view class="S19" wx:if="{{total.user == 0}}">
+          <view class="c666 v1">暂时未找到相关信息~~</view>
+       </view>
+      </view>
+      <view class="gline"></view>
+      <view>
+        <view class="c333 fz32 s17" >
+          卡片（{{total.card}}家）
+        </view>
+        <view class="bgf9f9f9">
+          <view wx:for="{{card}}">
+            <navigator url="/pages/avator?a=1&uid={{item.uid}}" hover-class="none">  
+                <view  class = "cardcon cardshow">  
+                    <view class = "cardlt">
+                        <image src="{{item.logo}}"/> 
+                    </view>
+                    <view class = "cardtl">
+                        <view class = "cardh1">  <text wx:for="{{item.company}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text> </view>
+                        <text class="cardtxt">{{item.types}}</text> 
+                        <text class="cardtxt">{{item.products}}</text> 
+                    <view class = "txtrt"> <text wx:for="{{item.name}}" wx:key="*this" class="{{item == keyName ? 'highlight' : 'normal' }}">{{item}}</text></view> 
+                    </view>
+                </view>
+            </navigator>
+          </view>
+        </view>
+        <view class="more_check p_tbb" style="margin-top: 28rpx;" wx:if="{{total.card > 3}}">
+         <navigator url="/pages/search_more?type=card&key={{search_k}}&uid={{UID}}" hover-class="none">
+            查看更多<image src="https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png"/>
+         </navigator>
+       </view>
+       <view class="S19" wx:if="{{total.card == 0}}">
+          <view class="c666 v1">暂时未找到相关信息~~</view>
+       </view>
+      </view>
+    </view>
+
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";                                  
+import tip from "@/utils/tip";
+
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant'; 
+export default class Search extends wepy.page {
+
+  config = {
+    navigationBarTitleText: '搜索',
+    navigationBarBackgroundColor: '#F2F2F2'                     
+  }
+  data = {
+    test:"12121212",
+    syncHight:{},
+    UID:0,
+    autofocus: true,
+    //个人中心卡片是否在
+    history:[],
+    hot:[],
+    //历史记录是否为空
+    has_hist:true,
+    keyName:"",
+    //搜索关键字
+    search_k:'',
+    search_k2:'',
+    invitation:{},
+    user:{},
+    card:{},
+    is_hasCar:0,
+    hasCar:{},
+    del_id:0,
+    init:0,
+    optionId:'',
+    init_share:0,
+    is_share:2,
+    TZuser_id:0,
+    Comtent:'',
+    share:0,
+    ListP:[],
+    no_detail:0,
+    active:1,
+    //当前页面
+    currentPage:1,
+    //总数
+    total:{},
+    //是否显示 底部loading
+    showLoading: true,
+    //显示搜索结果或是历史记录
+    showInit:true,
+    //防止重复加载
+    preventRepeatReuqest:false,
+    showDone:false,
+    showReturn:true
+
+  }
+
+
+  // 清除历史记录
+  async DelHostyList(){      
+    let that = this; 
+    const res = await api.Del_h({   
+      query: {                                                                                                                            
+        uid: that.UID,                              
+        method:"POST"                         
+      }
+    });
+    if (res.data.code == 200) {
+      that.history = [];
+      that.has_hist = false;
+      tip.success("删除成功");                             
+     }else{
+
+     }
+    if(res.data.code == 400 ) {
+
+        tip.alert("删除失败");
+    }                           
+      that.$apply();  
+    }
+  // 获取搜索信息列表
+  async getHostyList(uid){      
+    let that = this; 
+    const res = await api.History({
+
+      query: {                                                                                                                            
+        uid: uid,                              
+        method:"POST"                         
+      }
+
+    });
+    if (res.data.code == 200) { 
+      let data = res.data.data;
+      that.history = data.history;
+      that.hot = data.hot;
+
+      if(that.history.length>0){
+          that.has_hist = true;
+      }else{
+          that.has_hist = false;
+      }
+      this.syncHight = data;
+      console.log(data);                       
+       
+      // that.page_total = res.data.data.total;     
+      // if(data == ''){ 
+      //   this.nocellCont = true;   
+      // } 
+     }
+    if(res.data.code == 201 ) {
+
+        this.nocellCont = true;                                               
+        this.no_detail = 0;
+    }                           
+      that.$apply();  
+    }
+
+    // 获取搜索结果
+  async getSearchList(uid,key){      
+    let that = this;
+    this.keyName = key; 
+    const res = await api.Getlist_h1({
+
+      query: {                                                                                                                            
+        uid: uid,
+        keywords:key,                              
+        method:"POST"                         
+      }
+    });
+    if (res.data.code == 200) {
+
+      let data = res.data.data;
+      that.showInit = false;
+      that.invitation = data.list.invitation;
+      that.user = data.list.user;
+      that.card = data.list.card;
+      that.total = data.total;
+      console.log(data);
+      let searchData ={
+       key: key,
+       name:that.invitation.content
+      }
+      that.setData({
+        searchData,
+        searchResultDatas:that.invitation.content
+      })
+     
+
+       
+     }
+    if(res.data.code == 201 ) {
+
+        
+    }                           
+      that.$apply();  
+    }
+  onLoad() {
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    that.UID =  sys_id.uid;
+    that.autofocus = true;
+    that.getHostyList(that.UID);
+    
+    that.$apply();
+  }
+  onShow(){
+    
+    
+  }
+  computed = {
+
+  }
+  methods = {
+    test(){
+      return "123456";
+    },
+    inputs(e){
+      let key = e.detail.value;
+      key = key.replace(/\s+/g,"");
+      this.search_k2 = key;
+    },
+    pubswichNav(e){
+      let key = e.currentTarget.dataset.key;
+      key = key.replace(/\s+/g,"");
+      this.search_k = key;
+      if( key == ""){
+        tip.alert("搜索关键字不能为空");
+        return false;
+      }
+      this.getSearchList(this.UID,key);
+    },
+    change(){
+      this.showReturn = false;
+    },
+    search(e){
+      let key = e.detail.value;
+      key = key.replace(/\s+/g,"");
+      if( key == ""){
+        tip.alert("搜索关键字不能为空");
+        return false;
+      }else{
+        this.search_k = key;
+      }
+      this.getSearchList(this.UID,key);
+    }
+  }
+} 
+</script>
+<style lang="less">
+.highlight {
+    color: #C7000B;
+  }
+  .normal {
+    color: #333;
+  }
+
+  page{
+    color:#333;
+  }
+  .search_b{
+    background:#C7000B;
+    color:#fff;
+    width:98rpx;
+    height:72rpx;
+    line-height: 70rpx;
+    text-align: center;
+    border-radius: 6rpx;
+  }
+  .topSearch{
+    width:100%;
+    box-sizing: border-box;
+    padding:25rpx 4% 10rpx 4%;
+    background-color:#F2F2F2;
+    position: fixed;
+    top:0;
+    right:0;
+  } 
+  .searchBox text {
+    color:#999;
+  }
+  .searchBox{
+    width:81%;
+    height:72rpx;
+    line-height: 70rpx;
+    box-sizing: border-box;
+  }
+  .searchBox input{
+    width:98%;
+    padding:5rpx 0 5rpx 12rpx;
+    border-radius: 5rpx;
+    height:62rpx;
+    color:#333;
+    
+  } 
+  .SearchList,.result{
+    width:92%;
+    margin:0 auto;
+    padding-top: 130rpx;  
+  } 
+  .result{
+    width:100%;
+  }
+  .s16,.s17{
+    width:92%;
+    margin:25rpx auto;
+  }
+  .gline{
+    height:18rpx;
+    background:#f9f9f9;
+  }
+  .S14{
+    margin:30rpx 0 60rpx 0;
+    display:flex;
+    flex-wrap: wrap;
+    justify-content: flex-start;
+
+  }
+  .S14 view{
+    font-size: 28rpx;
+    display:inline-block;
+    margin: 20rpx 35rpx 0 0;
+    padding:10rpx 10rpx;
+    border: 1rpx solid #CDCDCD;
+    width: 109rpx;
+    border-radius: 5rpx;
+    box-sizing: border-box;
+    text-align: center;
+    line-height: 28rpx;
+  }
+
+  .S14 view:nth-child(5),
+  .S14 view:nth-child(10) {
+    margin-right: 0;
+  }
+  .S15{
+    margin:15rpx 0 25rpx 0;
+  }
+  .S15 view{
+    padding: 20rpx 0;
+    border-bottom: 1rpx solid #E6E6E6;
+  }
+  .S19 view{
+    padding: 20rpx 0;
+    text-align: center;
+    color:#f0f0f0;
+  }
+  .S19 view.v1{
+    padding: 100rpx 0;
+  }
+  .cellContent{
+    max-height:500rpx;
+  }
+  .clear_history{
+    text-align:center;
+    line-height:50rpx;
+    border:1rpx solid #E6E6E6;
+    border-radius:3rpx;
+    margin:25rpx auto 0 auto;
+    width:65%;
+    padding:12rpx 30rpx;
+    font-size:24rpx; 
+  }
+  .clear_history image,.more_check image{
+    display: inline-block;
+    width:32rpx;
+    height:32rpx;
+    margin-bottom: 6rpx;
+    vertical-align: middle;
+  }
+  .img25{
+    width:50rpx;
+    height:50rpx;
+    border-radius:5rpx;
+    margin-right: 12rpx;
+    vertical-align: middle;
+  }
+  .img62{
+    width:124rpx;
+    height:124rpx;
+     border-radius:8rpx;
+     margin-right: 10rpx;
+  }
+  .img44{
+    width:88rpx;
+    height:88rpx;
+     border-radius:5rpx;
+     margin-right: 38rpx;
+     vertical-align: middle; 
+  }
+  .more_check navigator{
+    text-align: center;
+    font-size: 28rpx; 
+  }
+  .top_name,.content,.topname1 {
+    display: inline-block;
+    width:490rpx;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow:ellipsis;
+  }
+  .content{
+    width:100%;
+  }
+  .topname1{
+    width:300rpx;
+  }
+  .flex_f{
+    display: flex;
+    align-items: center;
+  }
+  .tz{
+    padding:0 0 25rpx 0;
+    border-bottom: 1rpx solid #E6E6E6;
+  }
+  .margin_tb{
+    margin:30rpx 0 20rpx 0;
+  }
+  .p_img{
+    padding:16rpx 0 30rpx 0;
+    border-bottom: 1rpx solid #E6E6E6;
+    margin-bottom: 24rpx;
+  }
+  .m_p{
+    padding:26rpx 0;
+    border-bottom: 1rpx solid #E6E6E6;
+  }
+
+</style>
+

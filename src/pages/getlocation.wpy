@@ -1,0 +1,57 @@
+<template>
+    <view class="getContent"> 
+        <view class="getTitle"> 温馨提示</view>
+        <view class="getTxt"> 为了方便您定位公司地址，请同意授权。</view> 
+        <button class="btn" open-type="openSetting" bindopensetting='handler'  hover-class="btnChange"> 重新授权</button> 
+    </view>
+
+</template>
+<script>
+import wepy from 'wepy';
+import {
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';
+
+export default class getLocation extends wepy.page{
+  config = {
+    navigationBarTitleText: '授权',
+    navigationBarBackgroundColor: '#F2F2F2'
+  }; 
+
+ 
+  methods = {
+    handler(e){
+    var that = this;
+    if (!e.detail.authSetting['scope.userLocation']){   
+          wx.openLocation({
+            type: 'gcj02',
+            success: function (res) {   
+                console.log(res);
+             let address = res.address,
+                lt = res.latitude + "," + res.longitude; 
+                wx.navigateTo({ 
+                url: '/pages/cardset?address='+address+'&lt='+lt
+                }) 
+            }
+          });
+    }else{
+         wx.navigateTo({ 
+                url: '/pages/cardset'
+         }) 
+    }
+
+    } 
+  }
+ 
+   
+}
+</script>
+
+<style lang="less">
+    
+</style>
+

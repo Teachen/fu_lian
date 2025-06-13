@@ -1,0 +1,931 @@
+<template>
+  <scroll-view class="cellContent" scroll-y scroll-with-animation="true" wx:if="{{hasCarLoading}}"> 
+      <!-- 拨打电话弹窗  -->                   
+      <oPhone :callNum.sync="bindCallNum" :bindShow.sync="bindCallShow" :bindTel.sync="bindCallTel" :bindScore.sync="bindCallScore" :score.sync="scoreCall" :ample.sync = "ampleCall" @confirmScore.user="parentCSco" :callTitle.sync="callTitle"></oPhone>
+      <view class = "cardlist"> 
+        <view class="businesscard" wx:if="{{is_hasCar !=0 }}"> 
+            <view class="cardh1 fontwhite">       
+                {{hasCarname}} 
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-card-call.png" data-call="{{hasCar.tel}}" bindtap="checkScore" data-uid="{{hasCar.uid}}" data-title=""/>
+            </view> 
+            <view class = "fontwhite">
+              <image src="https://api.fuliaoquan.com/public/images/v3/ico_avator.png"/> 
+              {{hasCar.position}}
+            </view>
+            <view class = "fontwhite">
+              <image src="https://api.fuliaoquan.com/public/images/v3/ico_company.png"/>  
+              {{hasCar.company}}
+            </view>
+            <view class = "address fontwhite" style="margin-bottom: 0;width: 92%;" bindtap="map({{hasCar.latitude[0]}},{{hasCar.latitude[1]}})">  
+                <image src = "https://api.fuliaoquan.com/public/images/v3/ico-card-map.png"/>
+                <text class="addTxt">{{hasCar.address}} </text>
+            </view>
+            <view class="cardCollect cardh1">
+                 <image src="https://api.fuliaoquan.com/public/images/v3/ico-card-collect-active.png"  wx:if="{{is_save}}" bindtap="saves"/>
+                 <view wx:if="{{!is_user}}">
+                    <image src="https://api.fuliaoquan.com/public/images/v3/ico-card-collect.png" wx:if="{{!is_save}}" bindtap="saves"/>
+                 </view>
+                 <image src="https://api.fuliaoquan.com/public/images/v3/ico-editor.png" wx:if="{{is_user}}" bindtap="edit_car()"/>
+
+            </view>
+        </view> 
+        <view class = "businesscard businesscardnone" wx:if="{{is_hasCar == 0}}">
+            <view class = "cardtil marLeft"> 对方还未创建卡片 </view>                                                         
+            <view class = "cardcot marLeft"> 暂无卡片 </view> 
+            <view wx:if="{{is_user}}">
+              <view class = "cardcot marLeft" wx:if="{{buildId == 1}}">
+              <navigator url="/pages/cardset" hover-class="none">                                                
+                前往创建<image src= "https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png"/>
+              </navigator> 
+                  
+              </view>
+            </view>
+        </view>
+
+        <view class="cardTitle"> 
+            公司简介 
+            <text class="cardcol" wx:if="{{is_hasCar != 0}}">  {{hasCar.products}} </text>
+            <text class="cardcol" wx:if="{{is_hasCar != 0}}">  {{hasCar.types}} </text>  
+        </view>
+
+        <view class="cardContent">
+            <view wx:if="{{hasCar.content !=''}}">
+                {{hasCar.content}}
+            </view> 
+            <view class = " cardcol" style="text-align:center;margin: 45rpx auto 80rpx;" wx:if="{{hasCar.content == ''}}">      
+                <view>实在是业务太忙，</view>
+                <view>没来得及维护公司简介，实力说话</view> 
+            </view>
+        </view>
+      </view>
+      <view class="bgf9f9f9 padTB"> 
+        <view style="width: 92%;padding:15rpx 4%;" class="bgf">
+          <view class="cardTitle">新品</view> 
+        </view>
+        <view class="c999 fz28 tc bgf" style="padding:56rpx 0 86rpx 0" wx:if="{{NewP_total == 0}}">
+          暂未发布新品
+        </view>
+        <view class="border_b" style="width: 92%;margin:0 auto;"  wx:if="{{NewP_total > 0}}"></view>
+        <view class="fz28 tc bgf" style="width: 92%;padding:15rpx 4%;" wx:if="{{NewP_total > 0}}" wx:for="{{NewP}}">
+          <view class="flex_s p_tb">
+            <span class="c333 fz30">
+              {{item.content}}
+            </span>
+            <span wx:if="{{is_user}}" bindtap ="handleDelItem" data-delid="{{item.id}}">
+              <image class="img15" src="https://api.fuliaoquan.com/public/images/v2/del.png"/> 
+            </span>
+          </view>
+          <view class="flex_f p_tb" bindtap="makePhoneCall" wx:if="{{!is_user}}" data-call ="{{item.tel}}" data-title="此为新品，查看大图细节，请联系上传人">
+            <span class="p_span55 p_span" wx:for="{{item.img}}">
+              <image class="img55" src="{{item}}"/>
+            </span>
+          </view>
+          <view class="flex_f p_tb" wx:if="{{is_user}}" data-call ="{{item.tel}}" data-imgurl = "{{item.img}}"  @tap = "privewImgUrl">
+            <span class="p_span55 p_span" wx:for="{{item.img}}">
+              <image class="img55" src="{{item}}" data-src="{{item}}" @tap="mag" data-tzd="1"/>
+            </span>
+          </view>
+          <view class="c666 fz24 tl p_tbb border_b">
+            {{item.pubdate}} 
+          </view>
+        </view>
+        <view class="more_check bgf p_tb" wx:if="{{NewP_total > 3}}">
+          <navigator class="p_tb" url="/pages/newP_more?uid={{optionUid}}" hover-class="none">
+             查看全部<image src="https://api.fuliaoquan.com/public/images/v3/ico-mycard-right.png" style="position: relative;top:-3rpx;"/>
+          </navigator>
+        </view>
+      </view>
+      <view style="width: 92%;padding:0 4%;">
+        <view class="cardTitle"> 个人动态 </view> 
+      </view>
+
+      <view class="noDatabox" wx:if="{{nocellCont}}">       
+        <image src="https://api.fuliaoquan.com/public/images/v1/no_detail.png"/>                                                                            
+        <view class="text"> 暂无信息 </view>               
+      </view>
+       <!-- 纽扣列表模块渲染 -->
+        <block  wx:for="{{cellCont}}" wx:for-item="itemCell" wx:key="item.value" wx:for-index="index">                               
+        <view class="cellList">   
+        <view class="celltable">
+          <view class="cellLeft">
+            <image src="{{itemCell.user.avatar}}"/>                                                               
+          </view>
+          <view class="cellRight">                                                                                                                 
+            <view class="cellTop">                                                                                          
+              <view class="cellTopL">                                                                                           
+              <text>{{itemCell.user.name}}</text>                                   
+              <view class="topLi">                         
+                <navigator url="/pages/sortMsg" hover-class="none" wx:if="{{itemCell.type.typeid != 14}}" url="/pages/sortMsg?uid={{optionUid}}&typeid=1&typeid2={{itemCell.type.typeid2}}&typeid2_title={{itemCell.type.typeid2_title}}">                  
+                    {{itemCell.type.typeid2_title}}
+                </navigator>
+                <navigator url="/pages/sortMsg" hover-class="none" wx:if="{{itemCell.type.typeid == 14}}">                  
+                    {{itemCell.type.typeid_title}}
+                </navigator>                       
+              </view>                                           
+              </view>       
+               <view class="icophone" bindtap="checkScore" wx:if="{{itemCell.user.tel != ''}}" data-call="{{itemCell.user.tel}}" data-uid="{{itemCell.user.id}}" data-title="">
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-phone.png"/>    
+              </view>     
+            </view>     
+          </view>  
+            <view style="clear:both;"></view>         
+            <navigator url="/pages/postDetail" hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{itemCell.id}}&uid={{UID}}">                                 
+            <view  class="cellmain" bindtap="dispInput">                                                    
+              <text>{{itemCell.content}}</text>               
+            </view>                     
+            </navigator>
+
+            <view class="cellMainList flex_f cellDetail" data-imgurl = "{{itemCell.img}}" wx:if="{{itemCell.type.typeid != 14}}"  @tap = "privewImgUrl">  
+              <repeat wx:for="{{itemCell.img}}"  wx:for-item="tpitem" wx:key="{{tpitem.value}}">    
+                <view class="size {{!item.loaded?'bg':null}}">   
+                <image class="fade_in"  mode="aspectFill" src= "{{true ? tpitem: 'https://api.fuliaoquan.com/public/images/v3/ico-noneImg.png'}}"
+                  data-index="{{index}}"  data-src="{{tpitem}}" @tap="mag" data-tzd="{{itemCell.id}}"/>                            
+                </view>  
+                                
+              </repeat>
+              <text class="content_legth"> {{itemCell.img_num}} </text>  
+            </view>
+
+            <!-- 详情图片开始 -->
+            <view class="cellMainList123 cellMainList flex_f cellDetail" wx:if="{{itemCell.type.typeid == 14}}" data-imgurl = "{{itemCell.img}}"  @tap = "privewImgUrl">  
+              <repeat wx:for="{{itemCell.img}}"  wx:for-item="tpitem" wx:key="{{tpitem.value}}">    
+                <view class="c123 {{!item.loaded?'bg':null}}">   
+                <image class="fade_in" mode="aspectFill" src= "{{true ? tpitem : 'https://api.fuliaoquan.com/public/images/v1/ico-noneImg.png'}}"
+                data-index="{{index}}"  data-src="{{tpitem}}" @tap="mag" data-tzd="{{itemCell.id}}"/>                            
+                </view>                                                                                   
+                                                                                                                                                                    
+              </repeat>   
+              <text class="content_legth tc fz24" style="width:92rpx;height:40rpx;background: rgba(0,0,0,0.4);top:344rpx;right:22rpx;"> 1/{{itemCell.img.length}} </text> 
+            </view>  
+            <view class="cellMap" bindtap="map({{itemCell.latitude[0]}},{{itemCell.latitude[1]}})">              
+              <image src="https://api.fuliaoquan.com/public/images/v3/ico-maps.png" wx:if="{{itemCell.address != ''}}"/>                                    
+              {{itemCell.address}}  
+              <view class="celltime"> {{itemCell.pubdate}} </view>                                                                           
+            </view>
+          
+        </view>        
+            <view class="comment flex_s"> 
+              <view class="commentLi" wx:if="{{itemCell.type.typeid != 14}}"> 
+                <navigator  hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{itemCell.id}}&uid={{UID}}&showSned=0">                                        
+                  <image src="https://api.fuliaoquan.com/public/images/v3/ico-comment.png" style="width:28rpx;height:28rpx;"/>                                                                       
+                  <text>私信</text>                                                                                 
+                </navigator>   
+              </view>              
+              <view class="commentLi {{itemCell.type.typeid == 14? 'commentLi_a':''}}">
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-see.png"/>                                                                                                 
+                <text>{{itemCell.click}}</text>
+              </view>  
+              <view class="commentLi {{itemCell.type.typeid == 14? 'commentLi_a':''}}" @tap="likes"  data-id="{{itemCell.id}}" data-num='{{itemCell.likes}}'>            
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart.png" wx:if="{{itemCell.is_likes == 0}}"/>       
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart-active.png" wx:if="{{itemCell.is_likes ==1}}" />      
+                <text>{{itemCell.likes}}</text>                         
+              </view>  
+              <view class="commentLi {{itemCell.type.typeid == 14? 'commentLi_a':''}}" style="border-right:none;" @tap="collect"  data-id = "{{itemCell.id}}" data-num='{{itemCell.collect}}'>      
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-star-active.png"  wx:if="{{itemCell.is_collect == 1}}"/>
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-star.png"  wx:if="{{itemCell.is_collect == 0}}"/> 
+                <text>{{itemCell.collect}}</text>   
+              </view>  
+            </view>  
+    <view style="clear:both;"></view> 
+    </view>
+    <view style="width:100%;height:12rpx;background-color:#F2F2F2;"></view>  
+    </block>
+  </scroll-view> 
+        
+  <view class="backHome" bindtap="goHome" wx:if="{{is_share == 2}}"> 
+    <image src="https://api.fuliaoquan.com/public/images/v1/home1.png"/>
+  </view> 
+  <!-- <navigator url="/pages/cardset" hover-class="none"> 
+    <view class="createcard" wx:if="{{hasCar.is_set == 0}}">                                                              
+        创建个人卡片
+    </view>               
+  </navigator> -->
+  <view class="no_data c666 fz32" wx:if="{{showDone}}">
+      我们是有底线的~~
+  </view>
+  <view wx:if="{{showDel}}" class="backColor">               
+    <view class="DisGrey">
+        <view class="DelSure" bindtap="check_del({{del_id}},{{avauid}})"> 确认删除 </view>         
+        <view class="UnSure" bindtap="cancel"> 取消 </view>
+    </view>     
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";                                  
+import tip from "@/utils/tip";
+import oPhone from "@/components/ophone";                                                                                                          
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant'; 
+export default class avator extends wepy.page{
+  config = {
+    navigationBarTitleText: "个人页",
+    navigationBarBackgroundColor: '#F2F2F2'                                                   
+  };  
+  data = {
+    hasNewP:false,
+    NewP_total:0,
+    NewP:[],
+    is_share:1,
+    init_share:0,
+    cellCont: {}, 
+    nocellCont:false,             
+    showSned:1,
+    sortindex: 0,
+    sortid: 0,
+    buildId: 1,
+    optionUid: 592,
+    navBarTypeList: [],
+    privewImgUrlList: "",  
+    hasCarname: "辅料圈",
+    hasCarLoading: false,
+    is_save:false,
+    is_hasCar:1,
+    bindCallNum: 18859598689,
+    bindCallTel:0,
+    bindCallScore:0,
+    ampleCall:false,
+    scoreCall:0,
+    uidT:0,
+    bindCallShow:false,
+    callTitle:"",
+    hasCar:{
+    },
+    //是否是当前用户
+    is_user:false,   
+    init:0,
+    // 总页数
+    page_total:0,
+    UID:0,//用户ID 
+    Comtent: '', //帖子回复 
+    //是否收藏
+    is_collect:0,                           
+    //是否点赞
+    is_likes:0,
+    //当前页面
+    currentPage: 1,       
+    showSned:1,
+    avauid: 0,
+    del_id:0,
+    showDel:false,
+    navBarTypeList: []
+  } 
+  components = {
+    oPhone: oPhone 
+  };
+  // 获取纽扣信息列表
+  async getAvatorList(uId,currPg){      
+    let that = this; 
+    const res = await api.GetAvator({     
+      query: {                                                                                                                                   
+        uid: that.avauid,
+        uid2: uId,       
+        page: currPg,                              
+        method:"POST",                          
+      }
+    });
+    if (res.data.code == 200) { 
+      let data = res.data.data.list;                         
+      that.cellCont = [...that.cellCont,...res.data.data.list]; 
+      that.page_total = res.data.data.total;  
+      that.hasCarLoading = true; // 页面加载效果  
+      if(data == ''){ 
+        this.nocellCont = true;   
+      } 
+     }
+    if(res.data.code == 201 ) {
+        this.nocellCont = true;                                               
+        this.no_detail = 0;
+    }                           
+      that.$apply();  
+    }
+ 
+   async senPL(id,uid,content){
+      const json = await api.CommentsAdd({
+        query:{
+          uid:uid,
+          id:id,
+          content:content,
+          method:"POST"                   
+        }
+      });                                                             
+      if (json.data.code == 200) {
+          
+          tip.success(json.data.msg);                                                   
+          this.init = 1;
+          this.init_share = 1;  
+          this.$apply();
+
+      } else {
+          
+         tip.error("评论不能为空！");
+      }
+      this.$apply();
+    }
+   
+    async count(src,tz){ 
+        const json = await api.GetPicClick({  
+              query:{
+                uid:this.UID, 
+                id:tz,
+                pic:src,
+                method:"POST"                    
+              }
+            });                                                        
+            if (json.data.code == 200) {
+                // console.log("统计成功");
+            } else {
+                // console.log("失败");
+            }
+            this.$apply();
+    }
+    async show(imgList){
+
+        let current = this.privewImgUrlList;  
+        let tzd = this.tz; 
+        this.count(current,tzd);   
+        
+        let imageArry = [];                                                                                                         
+        let obj = imgList;                 
+        Object.keys(obj).forEach((item) => {        
+          imageArry.push(obj[item])
+        });
+
+        wx.previewImage({
+          current: current, // 当前显示图片的http链接
+          urls: imageArry, // 需要预览的图片http链接列表
+        })
+    }
+    async getCarlist(uid,uid2) { 
+        let that = this;
+        const json = await api.UserCard({ 
+          query: {
+            uid:uid,   
+            uid2:uid2,
+            method:"POST"
+          }
+        });
+        that.init_share = 1;
+        if (json.data.code == 200) {
+            that.hasCar = json.data.data; 
+            that.is_hasCar = 1;  
+            if(this.hasCarname != 'undefined') { 
+              this.hasCarname = json.data.data.name; 
+            }
+            that.hasCarLoading = true; // 页面加载效果 
+            that.hasCar.is_collect == 0? that.is_save = false : that.is_save = true;   
+        }else if(json.data.code == 201){
+            that.is_hasCar = 0;
+            that.hasCarname = "辅料圈";
+	          that.hasCar.content = '';
+           
+        } else {
+          tip.error(json.data.msg);
+          that.is_hasCar = 0;
+          that.hasCarname = "辅料圈";                                                                     
+
+        }
+        this.$apply();
+    }
+     async getNewList(uid,uid2) { 
+        let that = this;
+        const json = await api.GetNewList({ 
+          query: {
+            uid:uid,   
+            uid2:uid2,
+            method:"POST"
+          }
+        });
+        console.log(json);
+        if(json.data.code == 200) {
+            that.NewP = json.data.data.list;
+            that.NewP_total = json.data.data.total;
+
+        }else if(json.data.code == 201){
+            tip.error("数据加载失败");
+        } else {
+          tip.error(json.data.msg);
+        }
+        this.$apply();
+    }
+    async del_comfir() {
+
+      let that = this;
+      const json = await api.MyInvitationDel({
+        query: {
+          id: this.del_id,
+          uid:this.avauid,
+          method:"POST"
+        }
+      });
+
+      if (json.data.code == 200) {
+        that.init = 1;
+        this.NewP=[];
+        this.onLoad();
+	    this.showDel = false;
+      that.showLoading = false;
+
+      } else {
+        tip.error(json.data.msg)
+      }
+     
+    }
+    async checkScore(e) {
+    let that = this;
+                        
+    this.callTitle = e.currentTarget.dataset.title;
+     if(this.callTitle == null || this.callTitle == ""){
+          this.callTitle = "电话号码：";
+      } 
+    let uidT = e.currentTarget.dataset.uid;
+    that.uidT = uidT; 
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:uidT,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) { 
+        that.bindCallScore = 0;
+        that.ampleCall = true;
+        that.bindCallShow = false; 
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      } else if(json.data.code == 201){
+         that.bindCallShow = true; 
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = true;
+        this.$apply();   
+      }else if(json.data.code == 202){
+         that.bindCallShow = true; 
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = false;
+        this.$apply();
+      }
+  }
+  async parentCSco1(){
+    let that = this;
+    that.bindCallShow = true;                        
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:this.uidT,
+          type:1,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        // that.bindCallTel = 1;
+        that.bindCallScore = 0;
+        that.bindCallShow = false;
+        that.ampleCall = true;
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      }
+  }
+  methods = {
+    parentCSco(){
+      this.parentCSco1();
+    },    
+      handleDelItem(e){
+        console.log(e)
+        this.del_id = e.currentTarget.dataset.delid;                       
+        this.showDel = true;
+
+      },
+      check_del(){
+          this.del_comfir();
+      },
+      cancel(){
+          this.showDel = false;
+      },
+      goHome(){
+           wepy.switchTab({
+            url: '/pages/home'                                                        
+          });    
+      },
+      dispInput(){
+        this.TZid = 0; // 恢复追加评论状态  
+      },
+      map(la,lo){ // 地图 
+        let address = this.hasCar.address
+          la = parseFloat(la);
+          lo = parseFloat(lo);
+          wx.openLocation({
+            latitude: la,
+            longitude: lo,
+            scale: 18,
+            address:address
+          })
+      },
+    likes(t){												
+      let that = this;
+        var a = this, n = a.data.cellCont,i = t.currentTarget.dataset.id, 
+        e = (
+        Number(t.currentTarget.dataset.num),                        
+        function(e) {
+            n[e].id == i && (
+              // that.Likes2(a,n,i,e)
+              wx.request({
+                url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetLikes',
+                cachetime: "0",
+                method:'post',
+                data: {id: i, record:1,uid: that.avauid}, 
+                header: {'Content-Type':  'application/x-www-form-urlencoded'},
+                success: (t)=>{ 
+                n[e].is_likes = (t.data.data.is_likes==0) ? 1 : 1;
+                n[e].likes = (t.data.data.is_likes==0) ? Number(n[e].likes) : Number(n[e].likes)+1;
+                  
+                if(t.data.data.is_likes==0){
+                  tip.error(t.data.msg);
+                }else{
+                  tip.success(t.data.msg);
+                }
+ 
+                a.setData({cellCont: n});       
+                }
+                })
+              );
+            }
+            );
+            for (var o in n) e(o);
+          },
+        collect(t){
+            let that = this;
+            var a = this, n = a.data.cellCont,i = t.currentTarget.dataset.id, 
+            e = (
+            Number(t.currentTarget.dataset.num),                       
+            function(e) {
+                n[e].id == i && (
+                  wx.request({
+                    url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetCollect',
+                    cachetime: "0",
+                    method:'post',
+                    data: {id: i, uid: that.avauid},
+                    header: {'Content-Type':  'application/x-www-form-urlencoded'},                                         
+                    success: (t)=>{ 
+                    n[e].is_collect = (t.data.data.is_collect==0) ? 1 : 1;
+                    n[e].collect = (t.data.data.is_collect==0) ? Number(n[e].collect) : t.data.data.total;
+
+                    if(t.data.data.is_collect==0){
+                      tip.error(t.data.msg);
+                    }else{
+                      tip.success(t.data.msg);
+                    }
+
+                    a.setData({cellCont: n});
+                    }
+                })
+              );
+            }
+            );
+            for (var o in n) e(o);  
+        },
+
+      saves(t){
+      
+            let that = this;
+            var a = this, n = a.data.is_save, i = a.data.hasCar.id; 
+              wx.request({
+                url: 'https://api.fuliaoquan.com/api/v1/card/GetCollect',
+                cachetime: "0",  
+                method:'post',
+                data: {id: i, uid: that.avauid,type: 1},
+                header: {'Content-Type':  'application/x-www-form-urlencoded'},
+                success: (t)=>{  
+                
+                if(t.data.code == 200){
+                   n = (t.data.data.is_collect == 0)? 0 : 1;
+                  if(t.data.data.is_collect ==0){
+                     tip.success(t.data.msg);
+                  }else{
+                    tip.success(t.data.msg);
+                  }
+                }else if(t.data.code == 201){
+                    tip.success(t.data.msg);
+                }else{
+                    tip.error(t.data.msg);
+                }
+                
+                a.setData({is_save: n});     
+                }
+            });      
+      },
+        backHome(){
+             wepy.switchTab({
+              url: '/pages/home'                                                        
+            });  
+        },
+        edit_car(){
+
+          wepy.redirectTo({
+            url:'/pages/cardset'
+          }) 
+        }, 
+        inputs(e){
+        this.Comtent = e.detail.value;
+        },  
+        makePhoneCall(e) {
+        let callNum = e.currentTarget.dataset.call;
+        this.callTitle = e.currentTarget.dataset.title;
+        if(this.callTitle == null){
+            this.callTitle = "电话号码：";
+        }                                                                         
+        this.bindCallNum = e.currentTarget.dataset.call;
+        this.bindCallTel = 1;
+        this.bindCallScore = 0;            
+        this.bindCallShow = true; 
+        this.$root.$apply();
+        },  
+        mag(e){
+         this.privewImgUrlList = e.currentTarget.dataset.src;
+         this.tz = e.currentTarget.dataset.tzd;
+        },
+        privewImgUrl(e){
+          let imgList = e.currentTarget.dataset.imgurl;
+        
+          this.show(imgList);
+        },
+        //分页加载
+        onReachBottom() {
+          console.log("拉倒底部了");
+          let that = this;    
+          if(that.page_total == that.currentPage){
+              that.showDone = true;                   
+          }
+
+          //判断总页数是否大于翻页数
+          if ((that.page_total) > that.currentPage) {     
+              that.currentPage++;
+              that.getAvatorList(that.optionUid,that.currentPage);    
+          }
+        }
+    }
+
+
+  //小程序分享
+    onShareAppMessage(res) {
+     
+        wx.showShareMenu({
+          withShareTicket: true
+        })
+
+        return { 
+            title: this.hasCarname + "的卡片，请惠存。",
+            path:'/pages/avator?a=2&buildId=0&uid='+this.optionUid+'&uid2='+this.UID,
+        }
+ 
+      }             
+ 
+    onLoad(option){  
+        let that = this;
+        let calore = wepy.getStorageSync(USER_UID);                                                                                          
+        that.avauid = calore.uid;
+        that.UID = calore.uid;                                      
+        if(calore.uid == null){
+          let uid = option.uid2;
+          let optionUid = option.id;
+           wepy.redirectTo({
+                url:'/pages/authorize_de?type=2&type_share=1&id='+optionUid+'&uid2='+uid,                                                        
+            })
+        }      
+        if(that.init == 0){
+           that.optionUid = option.uid; 
+           that.buildId = option.buildId;                                                            
+        };
+        if(that.init_share == 0){
+            that.optionUid = option.uid;                                              
+            that.is_share = option.a;                                                       
+        }      
+
+        that.is_user = false;
+        if(that.avauid == that.optionUid){                    
+            that.is_user = true;
+        }else{
+          that.is_user = false;
+        } 
+        //获取用户卡片详情
+        that.getCarlist(that.avauid,that.optionUid);
+        //获取用户新品详情 
+        this.getNewList(this.avauid,this.optionUid); 
+        that.TZid = 0; // 恢复追加评论状态  
+        that.cellCont = [];
+        that.getAvatorList(that.optionUid,that.currentPage);  
+        that.Comtent = "";
+        that.nocellCont = false; 
+        if(that.init == 0){
+          that.is_collect = 0;  
+          that.is_likes = 0;  
+        }
+        that.$apply();    
+    }
+
+   onShow() {
+        this.getNewList(this.avauid,this.optionUid);                   
+        let setTip = wepy.getStorageSync("getSecondTip"); 
+        if( setTip == true || setTip == '') { 
+            wepy.setStorageSync("getSecondTip", false); 
+        } 
+
+   }
+
+}
+</script>
+<style lang="less">
+.backHome{ 
+        position:fixed;
+        bottom:218rpx;
+        right:17rpx;
+        z-index:999;
+
+        image{
+            width:137rpx;
+            height:135rpx;
+        } 
+    }
+.cellContent{
+    position: relative;
+    padding-bottom:84rpx; 
+  }
+  .celltable{
+    width: 100%;
+    padding-bottom: 6rpx; 
+  .cellLeft image{
+    width: 85rpx;
+    height: 85rpx;
+    border-radius: 6rpx;
+  }
+  .cellLeft{
+    margin-right: 2%;
+    float: left;
+  }
+  }
+  .cellTopL{
+    height: 85rpx;
+    margin-top:-5px;
+    float: left;
+  .topmsg{margin-top:17rpx;}
+  .topmsg text{
+    font-size:24rpx;
+    font-family:PingFang-SC-Medium;
+    font-weight:500;
+    color:rgba(153,153,153,1);
+  }
+  .topLi text{
+    width:85rpx;
+    height:38rpx;
+    color:rgba(92,133,180,1);
+    border: 1rpx solid #5C85B4;
+    border-radius:5rpx;
+    margin-right: 20rpx;
+    padding: 2rpx 9rpx;
+    font-size: 22rpx;
+  }  
+  }
+  .cellTop>image{
+    width: 39rpx;           
+    height: 39rpx;                       
+    margin-top:18rpx;
+    float:right;
+  }
+  .cellRight{
+    width:85%;
+    float:right;
+  } 
+
+  .businesscard{
+        width:89%; 
+        background:#3f331b;
+        box-shadow:0px 2rpx 4rpx 2px rgba(0, 0, 0, 0.06);
+        border-radius:5px; 
+        margin-bottom:56rpx; 
+        padding:48rpx 39rpx 19rpx;
+        .fontwhite{
+                margin-bottom:22rpx; 
+                font-size:28rpx;
+                color: #ccc;
+                text-align: left;
+                  image{
+                    width:34rpx;
+                    height:38rpx;
+                    float:left;
+                    margin-right:8rpx; 
+                  }
+                .addTxt{
+                  width:475rpx;
+                  display:inline-block; 
+                }
+                }
+        .cardh1 {
+                margin-bottom:42rpx; 
+                font-size: 40rpx;
+                margin-left:-8rpx; 
+            image{
+                width: 45rpx;
+                height: 45rpx;
+                float:right;
+            }
+        }
+        .address image{
+            width: 34rpx;
+            height: 38rpx;
+            float: left;
+            margin-right: 13rpx; 
+        }
+        // .cardCollect{float:right;}
+    }
+    .cardTitle{
+        font-size: 32rpx; 
+        color: #333;
+        margin-left: 28rpx;
+        padding-right:29rpx; 
+        position:relative;
+        text.cardcol{
+            border:1rpx solid #ccc;
+            border-radius:5rpx;
+            margin-left:20rpx;
+            float:right;
+            margin-top:6rpx;                
+            padding:2rpx 4rpx;
+
+        }
+    }
+    .cardContent{
+        text-align:left; 
+        color:#666; 
+        margin:25rpx 0 35rpx;   
+    }
+    .cardcol{
+        color: #666;
+        font-size: 24rpx;
+    }
+    .cardTitle::before{
+        content: '';
+        width:5rpx;
+        height:22rpx;
+        background:rgba(199,0,11,1); 
+        border-radius:3rpx;
+        position: absolute;
+        left: -20rpx;
+        top: 16rpx;
+        display: inline-block;
+    }
+    .businesscardnone{
+        background:url("https://api.fuliaoquan.com/public/images/v1/group2.png") no-repeat;
+        background-size:107% 210%;
+        -moz-background-size:107% 210%;
+        background-position:-31rpx -135rpx; 
+        height:258rpx;
+
+        .marLeft{
+            margin-left: 260rpx;
+        }
+        .cardtil{
+            color: #333;
+            font-size: 32rpx;
+            margin-top: 91rpx;
+        }
+        .cardcot{
+            color: #666;
+            font-size: 28rpx;
+            margin-top:16rpx; 
+            image{
+            width:26rpx;
+            height:24rpx; 
+            vertical-align:middle; 
+            }
+        }
+    }
+.createcard{
+  width:90%;
+  height:80rpx;
+  text-align:center;
+  line-height:80rpx;
+  font-size:32rpx;
+  color:#fff;
+  background:#c7000b; 
+  border-radius:5px;
+  position:fixed;
+  bottom:6rpx;
+  left:35rpx;
+
+} 
+</style>
+

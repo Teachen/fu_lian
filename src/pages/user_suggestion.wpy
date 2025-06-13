@@ -1,0 +1,189 @@
+<!--意见反馈-->
+<template>
+  <view class="section">
+  <form bindsubmit="formSubmit">
+    <textarea class="areas" placeholder='请填写您的意见反馈' maxlength="{{max}}" name='sugg'  @input="inputs"> 
+        <text class="currentWordNumber">{{currentWordNumber|0}}/{{max}}</text>
+        <text class="hint"></text>
+    </textarea>
+
+      <button class="act"  formType="submit" disabled="{{abled}}">确定</button>       
+  </form>
+  </view>
+    
+</template>
+<script>
+import wepy from 'wepy'
+import api from '@/api/api';
+import tip from '@/utils/tip';                                                                    
+import {
+  USER_INFO,USER_SPECICAL_INFO,   
+  USER_UID  
+} from '@/utils/constant';    
+export default class PointsRule extends wepy.page {
+
+  config = {
+    navigationBarTitleText: '意见反馈',
+    navigationBarBackgroundColor: '#F2F2F2'     
+  }
+  data = {
+    max:500,
+    value:'',
+    len:0,
+    abled: false,// 禁止用户提交 
+    currentWordNumber:0,
+    uid: 0,
+    mobile: '',
+    version: '',
+    content:""
+  }
+
+  events = {
+    
+  }
+
+  async getSysteminfo() {
+    var that = this;
+    wx.getSystemInfo({
+      success (res) {
+        that.mobile = res.model; 
+      }
+    })
+  }
+    onLoad() {
+        let sys_id = wepy.getStorageSync(USER_UID);
+        this.uid =  sys_id.uid;
+        this.version = wepy.$instance.globalData.version;
+        this.getSysteminfo();
+        this.abled = false;  
+      }
+    onShow(){
+      // let that = this;
+      // this.getUserInfo();
+    }
+    computed = {
+       
+    }
+    async addSugg(content) { 
+      let that = this;
+      let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+      let isDefult = 0;
+      if (this.isDefult) {
+        isDefult = 1;
+      }
+      let openId = userSpecialInfo.openid;   
+      const json = await api.saveSuggest({
+        query: {
+          uid: this.uid,
+          system: this.mobile,
+          version1: this.version,
+          content: content.sugg,
+          method:"POST"
+        }
+      });
+      if (json.data.code == 200) {
+        //0 列表 1新增 2编辑 (显示列表)
+          console.log("发布成功");
+          tip.success(json.data.msg);
+          wx.navigateBack({
+              delta:1
+          })
+
+      } else {
+          tip.error(json.data.msg)
+      }
+
+      that.showLoading = false;
+    }
+    methods = {
+        inputs(e){
+          // 获取输入框的内容
+        this.value = e.detail.value;  
+        this.len = parseInt(this.value.length);     
+        //最多字数限制
+        if(this.len > this.max) return;
+            // 当输入框内容的长度大于最大长度限制（max)时，终止setData()的执行
+        this.currentWordNumber = this.len; //当前字数       
+        },
+        formSubmit(e) { 
+          let suggestion = e.detail.value;
+          console.log(suggestion)   
+          this.addSugg(e.detail.value);
+          if (suggestion.sugg == "") { 
+            this.abled = false;
+            return false;
+          }else{ 
+            this.abled = true;
+          }          
+      }
+    }
+    events = {
+
+    }
+
+
+  
+
+  }
+
+</script>
+<style lang="less">
+.areas{
+  font-size: 30rpx;
+  padding: 30rpx 20rpx 0 20rpx;
+  overflow: hidden;   
+  position: relative;
+  margin:15rpx auto 0 auto;
+  background:#F2F2F2;
+  height:520rpx;
+  color: #999; 
+}
+.currentWordNumber{
+  font-size: 28rpx;
+  color: gray;
+  position: absolute;
+  left: 523rpx;
+  bottom: 14rpx;
+}
+.act{
+  width:90%;
+  margin:100rpx auto 0 auto;
+  background:#C7000B;
+  color:#fff;
+}
+.hint{
+   font-size: 28rpx;
+   position: absolute;
+   top: 120rpx;
+   left: 30rpx;
+   color: #FF6600;
+ }
+.jf_rule {
+  border-top: 1px solid #efefef;
+  background: #fff;
+  padding: 33px 20rpx;
+  margin-top: 10rpx;
+  .title {
+    font-size: 36rpx;
+  }
+  .jf_jz_title {
+    color: #9999ff;
+    font-size: 30rpx;
+    padding-top: 56rpx;
+    display: block;
+  }
+  .jf_content {
+    text-align: left;
+    font-size: 30rpx;
+    .sec_title {
+      color: #666;
+      padding-top: 40rpx;
+    }
+    .jf_ins {
+      color: #999;
+      padding-top: 30rpx;
+    }
+  }
+}
+
+</style>

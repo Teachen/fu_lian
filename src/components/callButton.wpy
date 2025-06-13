@@ -1,0 +1,146 @@
+<template> 
+    <view style="position:relative;">
+      <view class = "bindCallBox" wx:if="{{orPhone}}">
+          <view class="tipGrey"></view> 
+          <view class = "bindCall">
+              <text>应国家实名制法规要求，发帖需绑定手机号，若未绑定则只能浏览。</text>
+              <view class="btn">
+                  <navigator url="/pages/register" @tap="keeviewPa1"> 
+                      <text class= "active"> 绑定手机号 </text>
+                  </navigator> 
+                  <text @tap="keeviewPa"> 继续浏览 </text>
+              </view>   
+          </view> 
+      </view>
+      <movable-view class="disButton" direction="all"  x="{{x}}" y="{{y}}"  @tap="bindCall"> 
+        <image src="https://api.fuliaoquan.com/public/images/v1/pub1.png"/>  
+      </movable-view>  
+    </view>  
+    
+</template>     
+
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import util from '@/utils/util'   
+import {
+  SYSTEM_INFO,
+  USER_SPECICAL_INFO,           
+  USER_INFO,
+  USER_UID
+} from '@/utils/constant';
+const app = getApp();        
+export default class callButton extends wepy.component{
+
+  data = {   
+    x: 300, 
+    y: 156,  
+    is_mobile: 1,                                           
+    orPhone: false,
+    review: ''
+  }
+
+  methods = {
+    keeviewPa1(){
+      app.aldstat.sendEvent('绑定手机号弹窗-继续浏览');
+    }, 
+    keeviewPa(num){
+      app.aldstat.sendEvent('绑定手机号弹窗-绑定手机');
+      this.orPhone = false; 
+    }, 
+    bindCall(){  
+      app.aldstat.sendEvent('首页-红色发布按钮');   
+      let userUid_info = wepy.getStorageSync(USER_UID);
+
+      let Publish = wepy.getStorageSync("authorizePublish");                                    
+      this.is_mobile = userUid_info.is_mobile;   
+      console.log(userUid_info);
+      console.log(Publish);
+      this.review = Publish;
+      if(Publish == 1){                                                     
+        if(this.is_mobile == 1){        
+          wepy.navigateTo({ 
+          url: '/pages/publish'                                             
+          })
+        }else{              
+        this.orPhone = true; 
+        }
+      }else{
+          wepy.navigateTo({ 
+          url: '/pages/publish'   
+          })
+      }
+
+
+      this.$apply();           
+
+    } 
+
+  } 
+ 
+  onShow(){
+    this.orPhone = false;                                                                                                                                
+  }
+
+  
+}
+</script>
+
+<style lang="less">
+  .disButton {                   
+    image{
+    width:137rpx;
+    height:135rpx;
+    position:fixed;
+    top:0rpx;
+    right:-730rpx;
+    z-index:1111; 
+  }
+  } 
+  .bindCallBox{ 
+        .tipGrey {
+            width: 750rpx;
+            height: 10000rpx;
+            background-color: #000;                                     
+            opacity: 0.3;
+            position: absolute;         
+            top: 0;
+            right: -722rpx;
+            z-index: 1000;
+        }   
+        .bindCall{
+            width:508rpx;
+            height:238rpx;
+            border-radius:5px;
+            box-shadow:0px 1px 2px rgba(121, 121, 121, 0.6);
+            background-color:#fff;
+            padding:40rpx;
+            font-size:29rpx;
+            color:#666;
+            line-height:42rpx;
+            z-index:1002;
+            position:fixed;
+            top:342rpx;
+            left:80rpx;
+            .btn {
+                width: 100%;
+                margin-top: 122rpx;
+            }
+            .btn text{
+            width:155rpx;
+            height:60rpx;
+            text-align:center;
+            line-height:60rpx;
+            float:right;
+            color:#666;
+            font-size:29rpx;
+            margin-left:22rpx;
+            }  
+            .btn text.active{
+                color: #C7000B;
+            } 
+        }
+
+    }
+</style>
+

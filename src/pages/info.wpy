@@ -1,0 +1,385 @@
+<template>
+  <!-- <scroll-view class="cellContent" scroll-y scroll-with-animation="true" style="position: relative;">  -->
+  <view class="info">
+    <view class="header"> 
+      <button open-type='contact' session-from="{{nickAvator}}" class="customer"> 
+        <image src="https://api.fuliaoquan.com/public/images/v1/kefu1.png"/>
+      </button>
+      <view class="header_content flex_f">
+        <image class="avatarUrl" src="{{avatarUrl}}"/>
+        <view>    
+          <view class="nickName c333">{{nickName}}</view>                 
+          <view>  
+            <navigator class="item" url="/pages/register?is_has = {{is_mobile}}" @tap="bindCall">               
+              <view>
+                <view wx:if="{{is_mobile != 0}}" class="phone_box">                                 
+                  {{mobile}}
+                </view> 
+                <view wx:if="{{is_mobile == 0}}" class="phone_box">
+                  点击绑定手机号码
+                </view>
+                <image wx:if="{{is_mobile == 0}}" class="img_edi" src="https://api.fuliaoquan.com/public/images/v3/Edith.png"/>
+              </view>
+            </navigator>
+          </view>
+        </view>     
+      </view>
+      <navigator class="item setcard123" hover-class="none" url="/pages/cardset">
+        <view class="setcard c333 fz28">
+         设置
+        </view>
+      </navigator>
+      <navigator class="item setcard123 setcard33" hover-class="none" url="/pages/user_rule?id=22">
+        <view class="setcard cf09">
+         <span class="cf09">
+           积分
+         </span>
+         <span>
+           {{score}}
+         </span>
+            
+        </view>
+      </navigator>
+    </view>  
+    <view class="info_block"> 
+      <navigator class="item flex_s" url="/pages/my_comment">  
+        <view class="item_content flex_f">
+           <span class="ink_t bgc7b" wx:if="{{totalMsg>0}}"></span>
+          <image class="item_img" src="https://api.fuliaoquan.com/public/images/v3/msg.png"></image>
+          <view class="text">消息中心</view>
+        </view>
+        <view class="arrow"><image class="item_R" src="https://api.fuliaoquan.com/public/images/v3/ico-right.png"></image></view>
+      </navigator> 
+      <navigator class="item flex_s" url="/pages/my_send">   
+        <view class="item_content flex_f"> 
+          <image class="item_img" src="https://api.fuliaoquan.com/public/images/v3/send.png"/>
+          <view class="text"> 我的发布 </view>
+        </view>
+        <view class="arrow"><image class="item_R" src="https://api.fuliaoquan.com/public/images/v3/ico-right.png"></image></view>
+      </navigator>
+      <navigator class="item flex_s" url="/pages/my_save">    
+        <view class="item_content flex_f">
+          <image class="item_img" src="https://api.fuliaoquan.com/public/images/v3/my_save.png"/>
+          <view class="text">我的收藏</view>
+        </view> 
+        <view class="arrow">
+        <image class="item_R" src="https://api.fuliaoquan.com/public/images/v3/ico-right.png"></image>
+        </view>
+      </navigator>
+      <navigator class="item flex_s" url="/pages/setting"> 
+        <view class="item_content flex_f">
+          <image class="item_img" src="https://api.fuliaoquan.com/public/images/v3/about.png"></image>
+          <view class="text">帮助中心</view>
+        </view> 
+        <view class="arrow"><image class="item_R"  src="https://api.fuliaoquan.com/public/images/v3/ico-right.png"></image></view>
+      </navigator>
+      <view class="info_version"> 
+        <navigator url="/pages/user_rule?id=1" hover-class="none"> 
+          {{Version}}
+          <image style="width:14rpx;height:20rpx;opacity:0.8;"  src="https://api.fuliaoquan.com/public/images/v3/ico-right.png"/>
+        </navigator> 
+      </view>
+    </view>
+    <official-account style="position: fixed; bottom:1rpx; width: 100%;height: 84px;z-index: 1100;"></official-account> 
+  </view>
+  
+<!--   </scroll-view>  -->
+
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip';   
+import {
+  USER_INFO,
+  USER_SPECICAL_INFO,
+  USER_UID
+} from '@/utils/constant';
+const app = getApp();
+export default class Index extends wepy.page {
+  config = {
+    navigationBarTitleText: '我的',
+    navigationBarBackgroundColor: '#F2F2F2'
+  } 
+
+  data = {
+    avatarUrl: "", 
+    nickName: "",
+    Version: '',
+    phoneNuber:"",
+    nickAvator:{}, 
+    is_work:1,
+    score:10,
+    is_mobile:0,
+    mobile:'',
+    show_num:"",
+    uid:"",
+    UID:0,
+    totalMsg:0,
+    setPageInfo: 1,
+    bShowBind:false
+  }
+  async getUserInfo() {
+    let that = this;
+    let calore = wepy.getStorageSync(USER_UID);  
+    that.UID = calore.uid; 
+     const json = await api.IsMobileOk({     
+      query: {                                
+        uid: that.UID,
+        method:"POST"
+      }
+    });
+ 
+     if(json.data.code == 200){
+        
+        that.score = json.data.data.integral;
+        that.$apply(); 
+     }
+    let userSpecialInfo = wepy.getStorageSync(USER_SPECICAL_INFO) || {};
+    let userUid_info = wepy.getStorageSync(USER_UID);  
+    
+    this.uid = userUid_info.uid; 
+    that.showLoading = false;
+  }
+  async MsgTotal() {
+    let that = this;
+      const json = await api.MsgTotal({
+        query: {
+          uid:that.UID,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        json.data.data.total>0?tip.showTabBar():tip.hideTabBar();
+        that.totalMsg = json.data.data.total;
+      }
+  }
+  async UserScore() {
+    let that = this;
+      const json = await api.UserScore({
+        query: {
+          uid:that.UID,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        that.score = json.data.data.integral;
+        that.$apply(); 
+      }
+  }
+  async Logo1(a,n) {
+    let that = this;
+      const json = await api.Logo1({
+        query: {
+          uid:that.UID,
+          name:n,
+          avatar:a,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        console.log("成功")
+      }
+  }
+  onLoad() {
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    that.UID = sys_id.uid;
+    console.log(sys_id)
+    that.avatarUrl = sys_id.avatar;
+    that.nickName = sys_id.oauth_name;
+
+    if(sys_id.is_mobile == 1){
+        that.mobile = sys_id.mobile;
+        that.mobile = that.mobile.substr(0,3)+"****"+that.mobile.substr(7);   
+        that.is_mobile = sys_id.is_mobile;
+    }
+
+    that.nickAvator = {
+      "nickName": that.nickName,
+      "avatarUrl": that.avatarUrl
+    }
+    that.Version = wepy.$instance.globalData.version;
+    console.log(wepy.$instance.globalData.userMessage)
+    that.nickAvator = JSON.stringify(that.nickAvator);
+    that.getUserInfo();
+    that.$apply();
+    wx.getUserInfo({
+      success:function(e){
+        console.log(e)  
+       
+         if(that.nickName != e.userInfo.nickName || that.avatarUrl != e.userInfo.avatarUrl){
+            that.avatarUrl = e.userInfo.avatarUrl;
+            that.nickName = e.userInfo.nickName;
+            that.Logo1(that.avatarUrl,that.nickName);
+            console.log("执行了")
+         } 
+       
+        }
+    })
+     
+    
+  }
+  onShow(){
+   
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    that.UID = sys_id.uid;
+    that.MsgTotal();
+    this.UserScore();
+    if(that.UID == null || that.UID == 0 || that.UID == 'undefined'){
+         wx.navigateTo({
+          url: '/pages/authorize'                                           
+        })  
+    }
+    that.getUserInfo(); 
+    let setTip = wepy.getStorageSync("getSecondTip");       
+    if( setTip == true || setTip == '') { 
+        wepy.setStorageSync("getSecondTip", false); 
+    }
+    
+    that.$apply(); 
+  }
+  computed = {
+
+  }
+  methods = {
+    bindCall(){
+       app.aldstat.sendEvent('个人中心-电话号码点击');
+    }
+  } 
+ 
+}
+
+</script>
+<style lang="less">
+page {
+  -webkit-user-select:none;
+  user-select:none;
+  width:100%;
+  overflow-x:hidden !important;
+
+}
+
+.info{
+  width:100%;
+  box-sizing: border-box;
+}
+.header {
+  background: #F2F2F2;
+  position: relative;
+  height: 264rpx;
+  width: 100%;
+}
+.customer{
+  image{
+  width:137rpx;
+  height:137rpx;
+  position:fixed;
+  top:770rpx;
+  right:25rpx;
+  z-index:999; 
+  }
+}
+.header_content { 
+  height:100%;
+  text-align: center;
+  padding-left:80rpx;
+  color:#333333;
+  position:relative;
+  box-sizing: border-box;
+  .setcard{
+  color:#333;
+  font-size:30rpx;
+  position:absolute;
+  bottom:20rpx;
+  right:30rpx; 
+ 
+  }
+}
+.setcard123{
+    position:absolute;
+    top:50rpx;
+    right:38rpx;
+
+  }
+  .setcard33{
+    top:200rpx;
+    image{
+      margin-right:8rpx;
+      position: relative;
+      top:-3rpx;
+      vertical-align:middle;
+    }
+  }
+
+.avatarUrl {
+  width: 135rpx;
+  height: 135rpx;
+  border-radius: 50%;
+  margin-right: 35rpx;
+}
+
+.nickName {
+  font-size: 30rpx;
+  padding-top: 15rpx;
+  text-align: left;
+  font-weight: bold;
+}
+
+
+.info_block {
+  margin-top: 0rpx;
+  .item {
+    border-bottom: 1rpx solid #F0F0F0;
+    background: #fff;
+    padding: 34rpx 36rpx;
+  }
+  .item_content{
+    position: relative;
+    .text {
+      font-size: 28rpx;
+      margin-left: 20rpx;
+      color: #333333;
+    }
+  }
+  .phone_box{
+    color:#999999;
+  }
+  .item_img {
+    width: 36rpx;
+    height: 36rpx;
+  }
+  .arrow {
+    color: #cccccc;
+    font-size: 32rpx;
+  }
+  .tip {
+    color: #999;
+    font-size: 24rpx;
+    margin-top: 20rpx;
+    margin-left: 60rpx;
+  }
+}
+.info_version{
+    color:#999;
+    font-size:30rpx;
+    margin-top:150rpx;        
+    text-align:center;
+
+}
+
+.item_R{
+  width:16rpx;
+  height:25rpx;      
+  opacity: 0.7;   
+}
+.ink_t{
+      position: absolute;
+      width:12rpx;
+      height:12rpx;
+      border-radius: 50%;
+      top:0rpx;
+      left:30rpx;
+    }
+</style>

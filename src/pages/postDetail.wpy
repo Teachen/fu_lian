@@ -1,0 +1,894 @@
+<template>
+    <scroll-view scroll-y="" class="swiper-item-box" wx:if="{{no_detail == 1}}">
+    <view class="postCont" >    
+        <!-- 拨打电话弹窗  -->           
+        <oPhone :callNum.sync="bindCallNum" :bindShow.sync="bindCallShow" :bindTel.sync="bindCallTel" :bindScore.sync="bindCallScore" :score.sync="scoreCall" :ample.sync = "ampleCall" @confirmScore.user="parentCSco"></oPhone>
+
+        <view class = "cellList">
+            <view class="celltable">   
+                <view class="cellLeft">
+                <formId :UID.sync="UID">
+                  <navigator  hover-class="none"   url="/pages/avator?uid={{Detail.user.id}}"> 
+                  <image src="{{Detail.user.avatar}}"/> 
+                  </navigator>
+                </formId>            
+                </view>
+                <view class="cellRight">
+                    <view class="cellTop">
+                        <view class="cellTopL"> 
+                            <text>{{Detail.user.name}}</text>                       
+                            
+                            <view class="topLi pDtopLi">
+                                <!-- 调到作品 -->
+                                <navigator  hover-class="none"  wx:if="{{Detail.type.typeid == 14}}">      
+                                    {{Detail.type.typeid_title}} 
+                                </navigator>                                                             
+                                <!-- 调到需求页面 -->
+                                <navigator  hover-class="none"  
+                                wx:if="{{Detail.type.typeid == 2}}"  style="color:#F56E50;border:1rpx solid #F56E50;"
+                                url="/pages/supply?uid={{UID}}&typeid=2">      
+                                    {{Detail.type.typeid_title}} 
+                                </navigator>   
+                                <!-- 调到供应页面 -->
+                                <navigator url="/pages/supply?uid={{UID}}&typeid=1" hover-class="none" 
+                                wx:if="{{Detail.type.typeid == 1}}" bindtap="classType">                                              
+                                    {{Detail.type.typeid_title}}
+                                </navigator>                                          
+                                <navigator wx:if="{{Detail.type.typeid != 14}}" url="/pages/sortMsg" hover-class="none" url="/pages/sortMsg?uid={{UID}}&typeid2_title={{Detail.type.typeid2_title}}">                  
+                                    {{Detail.type.typeid2_title}}
+                                </navigator>                      
+                            </view> 
+                        </view>
+                        <view class="icophone" bindtap="checkScore" wx:if="{{Detail.user.tel != ''}}" data-call="{{Detail.user.tel}}" data-uid="{{Detail.user.id}}">  
+                         <formId :UID.sync="UID">                                 
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-phone.png"/>
+                        </formId>
+                        </view>  
+                    </view>   
+                </view>  
+                <view style="clear:both;"></view>                                                                                     
+                <view  class="cellmain">                                                            
+                <text selectable="true">{{Detail.content}}</text>                                       
+                </view>        
+                <view class="cellMainList flex_f cellDetail" wx:if="{{Detail.type.typeid != 14}}">
+                    <repeat for="{{Detail.img}}" key="idx" index="idx">
+                        <view class="size {{!item.loaded?'bg':null}}">
+                           <formId :UID.sync="UID"> 
+                              <image class="fade_in" style="width:219rpx; height:219rpx;" mode="aspectFill" src="{{true ? item: 'https://api.fuliaoquan.com/public/images/v3/ico-noneImg.png'}}" data-src="{{item}}" bindtap="previewImage"/>
+                            </formId>  
+                        </view>  
+                                             
+                    </repeat> 
+                </view>
+                <!-- 详情图片开始 -->
+                <view class="cellDetail cellMainList12"  wx:if="{{Detail.type.typeid == 14}}" data-imgurl = "{{itemCell.img}}"  @tap = "privewImgUrl">  
+                   <repeat for="{{Detail.img}}" key="idx" index="idx">  
+                    <image class="fade_in" mode="widthFix" style="width:690rpx;display: block; margin-top: 15rpx;" src="{{true ? item: 'https://api.fuliaoquan.com/public/images/v3/ico-noneImg.png'}}" data-src="{{item}}" bindtap="previewImage"/> 
+                  </repeat>   
+                </view>     
+                <view style="position: relative;">
+                    <view class="cellMap" bindtap="map({{Detail.latitude[0]}},{{Detail.latitude[1]}})">
+                        <image wx:if="{{Detail.address !=''}}" src="https://api.fuliaoquan.com/public/images/v3/ico-maps.png"/>
+                       <text wx:if="{{Detail.address !=''}}" > {{Detail.address}} </text>
+                        <view class="celltime"> {{Detail.pubdate}} </view>                                          
+                    </view>  
+                    <view class="comment flex_s">
+                        <view class="commentLi {{Detail.type.typeid != 14? 'commentLi_a':''}}" wx:if="{{Detail.type.typeid != 14}}" @tap ="tirgg">       
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-comment.png" style="width:28rpx;height:28rpx;"/>                                                                       
+                            <text>私信</text>    
+                        </view>       
+                        <view class="commentLi {{Detail.type.typeid == 14? 'commentLi_a':''}}">
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-see.png" style="width:30rpx;height:32rpx;"/>
+                            <text>{{Detail.click}}</text>
+                        </view>
+                        <view class="commentLi {{Detail.type.typeid == 14? 'commentLi_a':''}}" @tap="likes">
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart.png" wx:if="{{Detail.is_likes == 0}}"></image>
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart-active.png"  wx:if="{{Detail.is_likes == 1}}"></image>  
+                            <text>{{Detail.likes}}</text>
+                        </view> 
+                        <view class="commentLi {{Detail.type.typeid == 14? 'commentLi_a':''}}" @tap="collect">
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-star.png" wx:if="{{Detail.is_collect == 0}}"></image>
+                            <image src="https://api.fuliaoquan.com/public/images/v3/ico-star-active.png"  wx:if="{{Detail.is_collect == 1}}"></image>
+                            <text>{{Detail.collect}}</text>
+                        </view>    
+                    </view>
+
+                <view style="width:780rpx;height:12rpx;background-color:#FFF;margin-left:-30rpx;"></view> 
+                </view>
+            </view>
+               
+            <view style="clear:both;"></view>
+            <view class="disarea" wx:if="{{Detail.type.typeid != 14}}">私信 (仅双方可见)</view>            
+            <view class="postDiscuss"  wx:if="{{showComtent == 1}}" wx:for="{{Detail.comments}}" key="item" item="item" wx:key="key">
+              <view>
+                  <navigator  hover-class="none"   url="/pages/avator?uid={{item.from_uid}}" style="float:left;">
+                  <text class="disTitle cblue" style="width:16%;">{{item.from_name}} </text> :
+                  </navigator> 
+                  <text class="Soudiss">{{item.content}}</text> 
+
+                  <view class="delCom p_tb25" style="color: #C7000B;" wx:if="{{UID == TZuser_id && item.is_hf ==0 && UID != item.from_uid }}" bindtap="backMagges({{item.id}})" data-id="{{item.id}}" data-uid="{{item.from_uid}}">回复</view>
+                     
+              </view>
+                  <view class="delCom p_tb25" wx:if="{{UID == item.from_uid}}" bindtap="delComment({{item.id}})" data-id="{{item.id}}" data-uid="{{item.from_uid}}">删除</view>
+              
+              <view class="back_f p_tb25" wx:if="{{item.is_hf ==1}}">
+                  <navigator  hover-class="none" class="cblue"  url="/pages/avator?uid={{Detail.user.id}}" style="float:left;"> 
+                      {{Detail.user.name}}  
+                  </navigator>   
+                  <text style="float:left;"> 回复 </text> 
+                  <navigator  hover-class="none" class="cblue"  url="/pages/avator?uid={{item.from_uid}}" style="float:left;"> 
+                      {{item.from_name}}  
+                  </navigator>：
+                    {{item.hf.content}}
+              </view>   
+              <view style="clear:both;"></view>                                  
+            </view>                                                             
+        </view> 
+           
+        <!-- <button class="surecard" open-type="share" > -->
+        <button class="surecard" bindtap="goHome" >
+            返回首页
+        </button>  
+        <view class="addComment" style="bottom:{{commentBtm}}">
+            <input type="text" placeholder="请输入文字（仅双方可见）" adjust-position="{{adjustposit}}" bindblur="focusblur" bindfocus="bindinputfocus" focus="{{autofocus}}" placeholder-class="addPin" placeholder-style="color:#cccccc" maxlength="50"  @input="inputs" wx:if="{{showSned == 0}}"/>
+             <form bindsubmit="formSubmit_collect" report-submit="true">  
+              <button  formType="submit" disabled="{{abled}}" hover-class="none" class='invisibleclass invisibleclass1'>
+                <view @tap ="sendComment" wx:if="{{showSned == 0}}">                                     
+                    发送
+                </view>              
+              </button> 
+            </form>
+        </view>
+        <view wx:if="{{showDel}}" class="backColor">               
+            <view class="DisGrey">
+                <view class="DelSure" bindtap="check_del({{del_id}},{{UID}})"> 确认删除 </view>         
+                <view class="UnSure" bindtap="cancel"> 取消 </view>     
+            </view>     
+        </view>
+        <view wx:if="{{showDel2}}" class="backColor">               
+            <view class="DisGrey DisGrey2 flex_a">
+                <span class="c666" bindtap="close_bg" style="position: absolute;top:0rpx;right:20rpx;display: inline-block;padding: 10rpx;font-size: 40rpx;">×</span>
+                <view class="UnSure1"  bindtap="close_bg">
+                    <navigator  hover-class="none"  url="/pages/canvas?id={{Detail.id}}&&name = {{Detail.user.name}}&&content = {{Detail.content}} && typea =   {{Detail.type.typeid_title}} && typeb =  {{Detail.type.typeid2_title}} && avatar = {{Detail.user.avatar}} && img = {{Detail.img[0]}}">
+                      <view class="share_img">
+                         <image src="https://api.fuliaoquan.com/public/images/v3/hai.png" class="img44"  style="margin-right: 0;"/>
+                      </view>
+                        转发朋友圈
+                   </navigator>  
+                 </view>         
+                <view class="UnSure1" style="width:180rpx;"  bindtap="close_bg">
+                  <button class="surecard1"  open-type="share" style="background:#fff;">
+                      <image src="https://api.fuliaoquan.com/public/images/v3/wxlg.png" class="img44" style="margin-right: 0;"/>
+                  </button>
+                  转发好友
+                </view>     
+            </view>     
+        </view>
+        <view wx:if="{{showReturn}}" class="backColor">               
+            <view class="DisGrey DisGrey_R">
+                <input type="text" class="DisGrey_ipnut" @input="inputs" placeholder="添加回复" maxlength="50"  focus='true'></input>
+                <view class="DelSure" bindtap="check_Ren({{del_id}},{{UID}})"> 确认回复 </view>         
+                <view class="UnSure" bindtap="cancel"> 取消 </view>
+            </view>     
+        </view> 
+
+        <movable-area class="movearea" style="height:{{moveableheight}};top: 180rpx;">
+            <movable-view class="backHome" direction="all"  x="{{x}}" y="{{y}}">
+            <!-- <movable-view class="backHome" bindtap="goHome"  direction="all"  x="{{x}}" y="{{y}}"> -->
+                <!-- <formId :UID.sync="UID"> -->
+                <button class="surecard1 img62"  open-type="share" style="background:transparent;padding:0;margin:0;">
+                    <image src="../images/shareJ.png" class="img44" style="margin-right: 0;"/>
+                </button>
+                <!-- <image src="https://api.fuliaoquan.com/public/images/v1/home1.png" /> -->
+                <!-- <button class="surecard123" open-type="share" style="width:110rpx;height:110rpx;border-radius: 50%;">
+                    分享
+                </button> -->
+                <!-- </formId> -->
+            </movable-view>  
+        </movable-area> 
+    </view>
+    </scroll-view>
+
+    <view class="noDatabox"  wx:if="{{no_detail == 0}}">    
+        <image src="https://api.fuliaoquan.com/public/images/v1/no_detailDetail.png"></image>
+        <view class="text"> 哟呵，你来晚了~ </view>
+        <view  class="BackHom" bindtap="goHome"> 返回首页</view>  
+    </view>
+
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api';
+import tip from '@/utils/tip';
+import util from '@/utils/util';
+import oPhone from "@/components/ophone";
+import formId from "@/components/formid";
+ 
+import {
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';  
+const app = getApp();  
+export default class postDetail extends wepy.page{  
+    config = {        
+      navigationBarTitleText: '信息详情',
+    navigationBarBackgroundColor: '#F2F2F2'               
+    }   
+    components = {
+        formId: formId,   
+        oPhone: oPhone                 
+    }
+
+    data = {
+        no_detail:1,
+        showDel: false,
+        showDel2:false,
+        Detail:{},
+        x: 330, 
+        y: 456,  
+        showComtent:0,
+        showSned:1,
+        UID:0,
+        moveableheight:  692,               
+        commentBtm: '6rpx', 
+        abled: false,// 禁止用户提交  
+        del_id:0,
+        init:0,
+        addComment: 0,
+        adjustposit: false,
+        bindCallNum: 1885989898,
+        bindCallTel:0,
+        bindCallScore:0,
+        ampleCall:false,
+        scoreCall:0,
+        uidT:0,
+        bindCallShow:false,
+        optionId:'',
+        init_share:0,
+        is_share:2,
+        TZuser_id:0,
+        optionUid:'',
+        autofocus: false,
+        Comtent:'',
+        is_likes:0,
+        is_collect:0,
+        share:0,
+        scene:"",
+        showReturn:false
+    }
+
+    async FormId(formId) {
+
+        let that = this;
+          const json = await api.FormId({
+            query: {
+              formid: formId,
+              uid:this.UID,
+              method:"POST"
+            }
+          });
+
+        if (json.data.code == 200) {
+
+          console.log("收集成功");
+
+          } else {
+            console.log("收集失败");
+        }
+      }
+    
+    async getDetail(uid,id) {
+        let that = this;
+        console.log("执行获取详情")
+        const json = await api.GetDetails({
+          query: {
+            uid:uid,
+            id:id,
+            method:"GET",
+            showPL:1
+          }
+        });
+        if (json.data.code == 200) {
+           this.Detail = json.data.data;
+           console.log(this.Detail)
+           this.TZuser_id = this.Detail.user.id;
+           this.is_collect = this.Detail.is_collect;
+           this.is_likes = this.Detail.is_likes;   
+           this.no_detail = 1;
+            console.log("执行获取详情成功")
+           if(this.Detail.comments == "[]"){
+                this.showComtent = 0;
+           }else{
+                this.showComtent = 1;
+           }
+           this.$apply();
+
+        } else {
+          console.log("执行获取详情失败")
+          that.no_detail = 0;
+          this.$apply();  
+        }
+       
+    }
+    async del_comfir(){
+        const json = await api.MyCommentsDel({
+              query:{
+                uid:this.UID,
+                id:this.del_id,
+                method:"POST"                   
+              }
+            });
+    
+            if (json.data.code == 200) {
+               this.showDel = false;            
+               tip.success(json.data.msg);
+               this.init = 1; 
+               this.init_share = 1;
+               this.onLoad();
+
+            } else {
+                
+                tip.error(json.data.msg);
+            } 
+    }
+    async Ren_comfir(){
+        const json = await api.CommentsBack({
+              query:{
+                uid:this.UID,
+                id:this.del_id,
+                content:this.Comtent,
+                method:"POST"                   
+              }
+            });
+            this.showDel = false;
+            if (json.data.code == 200) {
+               
+               tip.success(json.data.msg);
+               this.init = 1; 
+               this.init_share = 1; 
+               this.onLoad();
+
+            } else {
+                
+                tip.error(json.data.msg);
+            }
+            this.$apply();
+    }
+    async senPL(id,uid,content){
+        const json = await api.CommentsAdd({
+              query:{
+                uid:uid,
+                id:id,
+                content:content,
+                method:"POST"                   
+              }
+            });       
+            if (json.data.code == 200) {
+               
+               tip.success(json.data.msg);              
+               this.init = 1; 
+               this.init_share = 1; 
+               this.onLoad();
+
+            } else {
+                
+                tip.error("评论不能为空！");    
+            }
+            this.$apply();
+    }
+    async count(src){
+        const json = await api.GetPicClick({
+              query:{
+                uid:this.UID,
+                id:this.optionId,
+                pic:src,
+                method:"POST"                   
+              }
+            });       
+            if (json.data.code == 200) {    
+                console.log("统计成功");
+            } else {
+                console.log("失败");
+            }
+            this.$apply();  
+    }
+      async checkScore(e) {
+    let that = this;
+                         
+    let uidT = e.currentTarget.dataset.uid;
+    that.uidT = uidT; 
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:uidT,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) { 
+        that.bindCallScore = 0;
+        that.ampleCall = true;
+        that.bindCallShow = false; 
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      } else if(json.data.code == 201){
+         that.bindCallShow = true;
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = true;
+        this.$apply();   
+      }else if(json.data.code == 202){
+         that.bindCallShow = true;
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = false;
+        this.$apply();
+      }
+  }
+  async parentCSco1(){
+    let that = this;
+    that.bindCallShow = true;                        
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:this.uidT,
+          type:1,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        // that.bindCallTel = 1;
+        that.bindCallScore = 0;
+        that.bindCallShow = false;
+        that.ampleCall = true;
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      }
+  }
+  
+   onShow() {
+
+      let setTip = wepy.getStorageSync("getSecondTip"); 
+      if( setTip == true || setTip == '') { 
+          wepy.setStorageSync("getSecondTip", false);     
+      } 
+
+   }
+
+   onLoad(option) { 
+        let that = this;        
+        this.showSned = 1;
+        this.Comtent ="";
+        if(this.init == 0) {
+            this.scene = decodeURIComponent(option.scene)
+            this.showSned = option.showSned;
+            this.autofocus = true;
+            let calore = wepy.getStorageSync(USER_UID);                                         
+            if(calore.uid == null || calore.uid == 0 || calore.uid == 'undefined'){
+              let uid = option.uid;
+              let id = option.id;
+               wepy.redirectTo({
+                    url:'/pages/authorize_de?type=1&type_share=1&id='+id+'&uid='+uid,                                                      
+                })
+            }   
+        }
+        if(this.scene == "undefined"){
+          let sys_id = wepy.getStorageSync(USER_UID);
+          this.UID =  sys_id.uid;
+          this.optionUid = sys_id.uid;
+          if(this.init == 0){
+            this.optionId = option.id;
+          };        
+        }else{
+          this.UID = 599;
+          this.optionUid = 599; 
+          this.optionId = this.scene;
+        }
+        if(this.init_share == 0){               
+            this.is_share = option.a;
+        } 
+
+        this.getDetail(this.optionUid,this.optionId);     
+        this.showDel = false;
+        this.showReturn= false;
+        that.abled = false;
+        //获取系统信息
+        wx.getSystemInfo({
+            success:function(res){   
+            let windowHeight = (res.windowHeight * (750 / res.windowWidth)); 
+            let statusBarHeight = (res.statusBarHeight * ( 750 / res.windowWidth));//将高度乘以换算后的该设备的rpx与px的比例 
+            // 可使用窗口宽度、高度 
+            that.moveableheight =  ( windowHeight - statusBarHeight -62) + 'rpx'                                                          
+            if(res.model == "iPhone X"){
+            that.moveableheight =  ( windowHeight - statusBarHeight -9) + 'rpx' 
+            }
+            }
+        })   
+        that.$apply();
+    }
+    //小程序分享
+    onShareAppMessage(res) {
+      let that = this;
+        if (res.from === 'button') {
+          // 来自页面内转发按钮 
+        }
+        wx.showShareMenu({
+          withShareTicket: true
+        })
+        
+        let title = this.Detail.content;
+        title = title.substring(0,18);
+        let type = this.Detail.type.typeid_title;
+        return {
+            title:"【"+type+"】"+title + "...",
+            path:'/pages/postDetail?a=2&id='+this.optionId+'&uid='+this.UID,
+        }
+      }
+
+    methods = {
+      parentCSco(){
+        this.parentCSco1();
+      }, 
+        formSubmit_collect(e) { 
+           let formId = e.detail.formId;    
+           this.FormId(formId);
+           this.abled = true;
+           this.senPL(this.optionId,this.optionUid,this.Comtent); 
+        }, 
+        bindinputfocus(e) {
+            var that = this;
+        //获取系统信息
+        wx.getSystemInfo({
+            success:function(res){  
+
+            let windowHeight = (e.detail.height * (750 / res.windowWidth));  
+            // 可使用窗口宽度、高度   
+            that.commentBtm =  windowHeight + 'rpx'                                                          
+            if(res.model == "iPhone X"){
+            that.commentBtm =  windowHeight+ 'rpx' 
+            }
+            console.log(that.commentBtm)
+            }
+        }) 
+        },
+        focusblur(e) {
+            this.commentBtm = 0;
+        },
+        goHome(){
+            app.aldstat.sendEvent('详情页分享-首页图标'); 
+             wepy.switchTab({
+              url: '/pages/home'                                                        
+            });    
+        },
+        map(la,lo){ // 地图	 
+            app.aldstat.sendEvent('帖子详情页-地图文字');	
+            console.log(la,lo);
+            wx.navigateTo({
+              url: '/pages/map2?la='+la+'&lo='+lo
+            })
+        },
+        likes(t){
+            app.aldstat.sendEvent('详情页点赞按钮');
+            let that = this;
+            var a = this, n = a.data.Detail,i = a.data.Detail.id;         
+            console.log(n);                                                        
+              wx.request({
+                url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetLikes',
+                cachetime: "0",
+                method:'post',
+                data: {id: i, record:2,uid: that.UID},
+                header: {'Content-Type':  'application/x-www-form-urlencoded'},
+                success: (t)=>{ 
+                n.is_likes = (t.data.data.is_likes==1) ? 1 : 1;
+                n.likes = (t.data.data.is_likes==0) ?  Number(n.likes) : Number(n.likes)+1;
+
+                if(t.data.data.is_likes==0){
+                  tip.error(t.data.msg);        
+                }else{
+                  tip.success(t.data.msg);
+                }
+
+                // that.cellCont = n;
+                a.setData({Detail: n});
+                }
+            });
+            },
+        collect(t){
+            app.aldstat.sendEvent('详情页收藏按钮');
+            let that = this;
+            var a = this, n = a.data.Detail,i = a.data.Detail.id;                   
+              wx.request({
+                url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetCollect',
+                cachetime: "0",  
+                method:'post',
+                data: {id: i, uid: that.UID,type: 1},
+                header: {'Content-Type':  'application/x-www-form-urlencoded'},
+                success: (t)=>{ 
+                n.is_collect = (t.data.data.is_collect == 0)? 0 : 1;
+                n.collect = (t.data.data.is_collect==0) ? Number(n.collect)-1 : Number(n.collect)+1;
+  
+                if(t.data.data.is_collect ==0){
+                   tip.error(t.data.msg);
+                }else{
+                  tip.success(t.data.msg);
+                }
+ 
+                a.setData({Detail: n});     
+                }
+            }); 
+  	    },
+        backMagges(del_id){
+            this.showReturn = true;
+            this.del_id = del_id;
+        },
+        sendComment(){
+            this.abled = true;
+            this.init = 1;
+            this.senPL(this.optionId,this.optionUid,this.Comtent);
+        },
+        close_bg(){
+          this.showDel2 = false;
+        },
+        tirgg(){
+            this.showSned = 0;            
+        },    
+        inputs(e){
+           this.Comtent = e.detail.value;
+        },
+        delComment(del_id){
+            this.showDel = true;
+            this.del_id = del_id;
+        },
+        getShare(){
+          this.showDel2 = true;
+        },
+        check_del(){
+            this.del_comfir();
+        },
+        check_Ren(){
+            this.Ren_comfir();
+        },
+        cancel(){
+            this.showDel = false;
+            this.showReturn = false;
+        },
+        previewImage(e) {  
+            console.log(e)      
+          let current = e.target.dataset.src;
+           this.count(current); 
+          let imageArry = [];
+          let obj = this.Detail.img;
+          Object.keys(obj).forEach((item) => {
+            imageArry.push(obj[item])
+          });
+          wx.previewImage({
+            current: current, // 当前显示图片的http链接
+            urls: imageArry, // 需要预览的图片http链接列表
+          })
+        }
+    }
+       
+}
+</script>
+<style lang="less">
+    .cellMainList{
+        max-height: 460rpx;
+    }
+    .cellMainList12{
+        width:100%;
+        min-height:460rpx;
+        overflow: visible;
+    }
+    .cellmain text{
+        max-height: 600rpx;
+    }
+    .cellDetail .size{
+        width:218rpx;
+        height:218rpx; 
+    }
+    .cellMap{margin:13rpx 0 80rpx;}
+    .cellTop .icophone {
+        width:52rpx;
+    }
+    .btn1{ 
+        width:10rpx;
+        height:10rpx;
+      }
+     .postCont .backHome {
+        bottom:386rpx;
+        right:138rpx;
+      }
+
+    .postDiscuss{
+        width: 100%;
+        .Soudiss {
+            color:#333333;
+            width:69%;
+        }
+    } 
+    .comment {
+        border-top:1px solid #F2F2F2;
+        margin:0;
+        position:absolute;
+        bottom:14rpx;
+        z-index:18; 
+    }
+
+    .backHome{ 
+        position:fixed;
+        bottom:-618rpx;
+        right:-732rpx;
+        z-index:999;
+
+        image{
+        width:122rpx;
+        height:120rpx; 
+        } 
+    }
+    .dianzan{
+        width:280rpx;
+    }
+    .DisGrey{
+        .UnSure1{margin-top: 40rpx;}
+        .DelSure{ color:#C7000B;}
+        .UnSure{color:#666;border-top:1rpx solid #ddd;} 
+        .active{
+            bottom: -492rpx;
+        }
+    }
+    .DisGrey_ipnut{
+        height:108rpx;
+        width:90%;
+        padding:0 5%;
+        background:#f2f2f2;
+        color:#999;
+
+    }
+    .DisGrey_ipnut::-webkit-input-placeholder{
+        color:#999;
+    }
+    .DisGrey_R .DelSure{
+        border-top:1rpx solid #ddd;
+    }
+    .cellDetail .size{
+        width:219rpx;
+        height:219rpx;
+        margin-bottom:19rpx;
+        margin-right:16rpx;
+        image{
+        width:100%;
+        height:100%;
+        }
+    }
+    .DisGrey>view{
+        height: 50%;
+        text-align: center; 
+        line-height: 108rpx;
+        font-size: 30rpx;
+    }
+    .addComment{
+        width: 100%;
+        height: 75rpx;
+        padding: 15rpx 0 15rpx 22rpx;
+        position: fixed;
+        bottom:0;
+        left:0; 
+        display: flex;
+        align-items: center;
+        background:#fff;    
+        z-index: 19;
+        image{
+        width:53rpx;
+        height:53rpx;
+        }
+        view{
+            margin-left: 16rpx;          
+        }
+        input,view.add_on{
+        width:573rpx;
+        height:74rpx;
+        border:1rpx solid#cccccc;
+        border-radius:37rpx;            
+        text-align: left;
+        padding: 0 24rpx;
+        line-height: 72rpx;
+        }
+        view.add_on{
+        text-align: center;
+        }
+        input::-webkit-input-placeholder{
+        text-align: center;
+        }
+    }
+    .addComment 
+    .postCont{        
+        position: relative;   
+        width:100%;            
+        height:100%;  
+        .backColor{             
+        width:100%;            
+        height:100%;
+        background:rgba(0,0,0,0.5);
+        position:fixed;
+        top:0;
+        z-index:20;
+        }
+    }
+    .disarea{
+        font-size:28rpx;
+        color:rgba(51,51,51,1);
+        width: 100%;
+        height: 72rpx;
+        line-height: 72rpx;
+        text-align: left;   
+        margin-top:8rpx;
+        border-bottom:1rpx solid #EEEEEE;
+    }
+    .delCom{
+        color:#C7000B;
+        margin-right:5px;
+        font-size: 26rpx;                                   
+        text-align:left;
+    }
+    .cblue{
+        color:#5C85B4;
+        text-align:left;
+        font-size:26rpx;
+
+    }
+    .cellList {
+        width:92%;
+        min-height:604rpx;
+        padding:19rpx 4% 140rpx 4%;
+        top:6rpx;
+        left:2rpx;
+
+    }
+    .subTitle{
+        display: inline-block;
+        padding-left:17rpx;
+        color:#666;
+    }
+    .postDiscuss{
+        border-top:1rpx solid #EEEEEE;
+        padding:15rpx 0;
+        .Soudiss{
+            font-size: 26rpx;
+        }
+    }
+    .back_f{
+        width: 100%;
+        float: left;
+        border-radius:10rpx;
+        line-height:45rpx;
+        font-size:26rpx;
+        color:#333;  
+    }
+    .share_b{
+        background: transparent;
+        padding:0;
+        border:0 !important;
+        outline: 0 !important;
+        font-size: 0;
+        color:#fff;
+        display: inline-block;
+        margin:0;
+    }
+    button[class="share_b"]::after {
+      border: 0;
+    } 
+    button[class="button-hover"]::after {
+      border: 0;
+    } 
+    :focus ::after{outline:none;border: 0;}
+    
+</style>

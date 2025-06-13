@@ -1,0 +1,744 @@
+<template>
+<view class="publish"> 
+  <view class="tipGrey"  wx:if="{{checking}}"></view>
+  <view class="audit"  wx:if="{{checking}}">
+    <view class="ac_back flex_f" catchtap="backSY">
+      <image src="https://api.fuliaoquan.com/public/images/v3/ico_left.png"/>
+    </view> 
+    <view class="ac_red"> 
+      <image src="https://api.fuliaoquan.com/public/images/v1/ico_loading.gif"/>
+      微信审核中...
+    </view>
+    <view class="ac_title">审核结果将会微信通知你</view>
+    <view class="acountDown"><text>{{acountDown}}</text>秒后将回到首页</view> 
+    <view class="ac_button"> 
+      <button class="ac_btn" open-type='contact' session-from="{{nickAvator}}">联系客服</button>
+      <button class="ac_btn" bindtap="chkMatch" wx:if="{{navindex != 200}}">查看匹配</button> 
+    </view>
+  </view>
+  <form bindreset="formReset" bindsubmit="bindFormSubmit" report-submit="true"> 
+      <view class="PubContiner">  
+          <view class="pubgonxu">选择
+            <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/>                                    
+          </view>                                
+          <view class="pubUl">
+              <text bindtap="pubswichNav"  wx:for="{{navBarType}}" wx:key="nInx" class="{{navindex==index? 'active' : ''}}" data-typeid = "{{item.id}}"
+              data-navindex="{{index}}">{{item.title}}</text>                                   
+              <text bindtap="pubswichNav" class="{{navindex==100? 'active' : ''}}" data-typeid = "13" 
+              data-navindex="100">新品</text>
+              <text bindtap="pubswichNav" class="{{navindex==200? 'active' : ''}}" data-typeid = "14" 
+              data-navindex="200">作品</text>                                                                                                                
+          </view> 
+          <view class="pubgonxu" wx:if="{{!showRemarks  || navindex==200}}">分类
+            <image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/> 
+          </view>                                                                                            
+          <view class="pubUl flex_s" wx:if="{{!showRemarks || navindex==200}}">                                                    
+              <text class="{{sortindex==index?'active':''}}" data-sortid="{{item.id}}" wx:for="{{navBarTypeList}}" wx:key="subnav" bindtap="setSortIndex"  
+              data-sortindex="{{index}}">{{item.title}}</text>                                                                                              
+          </view>
+        <!-- 新品发布 -->
+        <view class="cf09 cf092" wx:if="{{showRemarks}}">
+          <view wx:if="{{navindex == 100}}">1.如果自己的卡片未设置，新品将无法展示</view>
+          <view wx:if="{{navindex == 100}}">2.新品为你拓客，对外只展示小图，客人查看大图细节，需要联系你本人。</view>
+          <view wx:if="{{navindex == 200}}">
+           1、设计师发布优质作品，有积分奖励
+          </view>
+          <view wx:if="{{navindex == 200}}">
+           2、积分奖励与兑换细则，请联系客服
+          </view>
+          <view wx:if="{{navindex == 200}}">
+           3、平台会对作品进行审核，请发布优质的作品
+          </view>
+          <view wx:if="{{navindex == 200}}">
+           4、带品牌logo或知识产品作品，请勿在此发布
+          </view>
+        </view>
+        <view class="r_box border_b flex_f" wx:if="{{showRemarks}}">
+          <text style="margin: 3px;float: left;">备注</text>
+          <view class="bz"><image src="https://api.fuliaoquan.com/public/images/v3/ico-require.png"/></view>
+          <input class="remarks phone_box fz28" type="text"  maxlength="{{navindex <= 200 && navindex > 100?200:15}}"  placeholder="请输入{{navindex <= 200 && navindex > 100?'作品的描述（限200字）':'新品关键词（限15字）'}}" placeholder-style="color:#999;" name="content1" value=""/>
+        </view>
+          <view  class="pubTextarea" wx:if="{{!showRemarks}}"> 
+              <textarea maxlength="200" placeholder="客户会按关键词搜索你的产品，请详细描述你发布产品的内容。"  name="content"                            
+              placeholder-class="pubarea" bindinput="bindTextAreaBlur"></textarea>                                                          
+              <text>{{textareacell}}/200</text>                                                                                                 
+          </view>                                                                                                       
+          <view class="addImages">  
+              <view class="content_add" wx:for="{{imgArray1}}" wx:key="*this">                
+                  <view bindtap="delete" class="delete" data-inde="{{index}}">
+                      <image class="ab" mode="aspectFill" src="https://api.fuliaoquan.com/public/images/v2/ico_del.png"/>               
+                  </view>
+                  <image class="add_img" data-index="{{index}}" mode="aspectFill" src="{{item}}"/>  
+              </view>               
+              <view bindtap="uploadImg" class="content_add" wx:if="{{noUploadImg}}">            
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-addimg.png"/>                                                                   
+              </view>
+
+          </view> 
+          <view style="clear:both"></view>
+          <view class ="fatip"> 图片上传后，请等待图片显示出来 </view>  
+          <view class="pubSet">
+              <view bindtap="showLocation1" wx:if="{{locatact == '0' && navindex != 100}}" data-locate = "0">
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-maps.png" />
+                <text>位置隐藏 </text>  
+              </view>
+              <view bindtap="showLocation" wx:if="{{locatact == '1' && navindex != 100}}" data-locate = "1"> 
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-maps-active.png"/>
+                <text class="active">位置显示 </text>
+              </view>
+              
+              
+              <view bindtap="showLocation1" wx:if="{{phoneact == '0' && navindex != 100}}" data-phone = "0">
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-calls.png"/>                                                                                                        
+                <text>号码隐藏 </text>
+              </view>   
+              <view bindtap="showLocation"  wx:if="{{phoneact == '1' && navindex != 100}}" data-phone = "1"> 
+                <image src="https://api.fuliaoquan.com/public/images/v3/ico-calls-active.png"/>   
+                <text class="active">号码显示 </text> 
+              </view>     
+              <button class="pubFabu {{sureOnline ? 'active' : ''}}" wx:if="{{!showRemarks || navindex == 200}}" formType="submit" disabled="{{abled}}">
+                发布
+              </button>
+              <button class="pubFabu active" formType="submit" wx:if="{{showRemarks && navindex == 100}}">
+                提交
+              </button>
+
+          </view>
+      </view>                                                                 
+  </form>  
+</view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api"; 
+import tip from "@/utils/tip"; 
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO, 
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant';
+var _imgArray = [], locateaddress = [];
+export default class PubLish extends wepy.page {  
+  config = {
+    navigationBarTitleText: "发布",
+    navigationBarBackgroundColor: '#F2F2F2'
+  };
+
+  data = {
+    navindex:12, 
+    bacInt1: false, 
+    typeid1: [], //排序索引 
+    sureOnline: false,
+    showRemarks:false,
+    typeid2: 3, 
+    nickAvator:{}, 
+    avatarUrl: "",
+    nickName: "",
+    acountDown: 5,
+    loading: '',
+    checking: false,
+    sortindex: 12, //分类索引
+    navBarType: [], //供应栏目
+    navBarTypeList: [], // 展开二级栏目列表                                                                                      
+    navBarTypeList1: 0,
+    abled: false,// 禁止用户提交                           
+    imgArray1: [],
+    UID: 592,
+    i: 1, 
+    locatact: 1,
+    phoneact: 1,
+    cooRd: '',  // 经纬度
+    textareacell:0,
+    noUploadImg: true,
+    checkAddress:'',
+    imgArray_t: ''                                                                                                              
+  };
+  
+  //图片上传
+  async uploadImg() {
+    let that = this;                                                                                                                    
+    let uId = that.UID;   
+    this.sureOnline = true; // 发布按钮颜色  
+    return new Promise((resolve, reject) => {                                                                                                                                                 
+    var t = 6 - _imgArray.length;
+    if(0 < t && t < 7) { 
+      wx.chooseImage({                
+        count: t, // 默认9
+        sizeType: 'compressed', // 可以指定是原图还是压缩图，默认二者都有  
+        sourceType: ["album", "camera"], // 可以指定来源是相册还是相机，默认二者都有                            
+        success: function(res) {  
+          // 返回选定照片的本地文件路径列表，tempFilePath可以作为img标签的src属性显示图片                                 
+          var tempF = res.tempFilePaths;   
+          tip.loaded(); 
+          for(var o in tempF){
+            wx.uploadFile({
+              url: "https://api.fuliaoquan.com/api/v1/Invitation/Upload", //仅为示例，非真实的接口地址                               
+              filePath: tempF[o], 
+              name: "myimage",
+              formData: {
+                uid: uId
+              },
+              success: function(res) {    
+                let pics = JSON.parse(res.data);  
+                if(pics.code == 200) { 
+                  pics = pics.data.pic; 
+                  if("" != pics && _imgArray.length <= 6){                                                                    
+                    _imgArray.push(pics),
+                    that.imgArray1 = _imgArray  
+                  }
+                }          
+                if(pics.code == 201) {
+                  tip.error("图片过大")
+                }
+                //判断图片数量
+                if(_imgArray.length == 6){
+
+                  that.noUploadImg = false;
+
+                }
+
+                that.$apply();   
+              }       
+            }); 
+          }
+        } 
+      }); 
+      }
+
+      
+    });
+  }
+  
+  
+  //删除图片
+  async delete(e) {
+
+        let calore = wepy.getStorageSync(USER_UID);
+        let uId =  calore.uid;   
+
+        Array.prototype.indexOf = function(e) {
+            for (var t = 0; t < this.length; t++) if (this[t] == e) return t;                                                                                                                                   
+            return -1;                                                                          
+        },
+        Array.prototype.remove = function(e) {      
+            var t = this.indexOf(e);                                                                                                                            
+            -1 < t && this.splice(t, 1);    
+        };
+
+        var t = e.currentTarget.dataset.inde;   
+        this.imgArray_t = _imgArray[t];                                 
+        _imgArray.remove(_imgArray[t]);                                      
+        this.imgArray1 = _imgArray;       
+        if(_imgArray.length < 7) {      
+          this.noUploadImg = true;                                                              
+        }
+        // 删除服务器上图片
+
+        const res = await api.PicDelimg({
+          query: {
+            uid: uId,
+            pic: this.imgArray_t,  
+            method: "POST"     
+          }
+        });
+        if (res.data.code == 200) {   
+        } 
+
+  }
+
+  // 根据获取到的 coord ,请求接口获得当前位置
+  async getLocate(cooRd){
+    let calore = wepy.getStorageSync(USER_UID);
+    let uId =  calore.uid;     
+    const res = await api.GetAddress({
+      query: {
+        uid: uId,
+        coord: cooRd,
+        method: "POST"     
+      }
+    });
+    if (res.data.code == 200) {
+      this.checkAddress = res.data.data.address;                  
+      locateaddress.push(res.data.data.address);
+    }    
+  }
+
+  //是否显示当前位置与手机号       
+  async showLocation1(e){                                     
+    var datalocate = e.currentTarget.dataset.locate;   
+    var dataphone = e.currentTarget.dataset.phone;                                       
+    if(datalocate == this.locatact){
+      this.locatact = 1;                                          
+    }
+    if(dataphone == this.phoneact){
+      this.phoneact = 1;  
+    }
+  }
+
+  async showLocation(e){             
+    var datalocate = e.currentTarget.dataset.locate;      
+    var dataphone = e.currentTarget.dataset.phone;          
+    if(datalocate == this.locatact){
+      this.locatact = 0; 
+      this.checkAddress = '';
+    } 
+    if(dataphone == this.phoneact){
+      this.phoneact = 0;                                    
+    }
+
+  }
+
+  // 获取经纬度
+  async showLocate(e){   
+    let that = this;   
+    return new Promise((resolve, reject) => {             
+        wx.getLocation({  
+        type: 'wgs84',
+        success: function(res) {
+          var latitude = res.latitude;        
+          var longitude = res.longitude;
+          that.cooRd = res.latitude + "," + res.longitude;      
+          that.getLocate(that.cooRd);                               
+        }
+      })
+    });
+  }                                                                       
+  // 获取二级栏目
+  async getSocondlist(typeid) { 
+    let that = this;
+    let calore = wepy.getStorageSync(USER_UID);                                                                           
+    let uId = calore.uid; 
+    const resNav = await api.getNavList1({
+      query: {    
+        uid: uId,
+        method: "POST",
+        typeid: typeid || 1
+      }
+    }); 
+    if (resNav.data.code == 200) {
+      let data = resNav.data.data;  
+      that.navBarTypeList = data; 
+      that.navBarTypeList1 = data[0].id;                        
+      that.$apply();
+    }
+  }
+  //供需菜单栏目
+  async getNavlist(uId) {   
+    let that = this;
+    const res = await api.getNavList1({             
+      query: {
+        uid: uId,
+        method: "POST"
+      }
+    });
+    if (res.data.code == 200) {
+      let data = res.data.data;
+      that.navBarType = data;
+       that.typeid1 = data[0].id; 
+      if (that.navBarType.length > 0) {
+        let typeId = wx.getStorageSync(SEL_CLASS_CODE);           
+        var selRottCateid = that.navBarType[0].typeid;
+       
+        for (var i = 0; i < that.navBarType.length; i++) {  
+          if (typeId == that.navBarType[i].id) {
+            selRottCateid = that.navBarType[i].id;  
+          }
+        }
+        that.getSocondlist(selRottCateid);
+      }
+    }                                                               
+  }
+
+ 
+  //帖子发布
+  async asyncbindFormSubmit(textarea,formId) { 
+
+      let that = this;                   
+      let imgs = _imgArray.join("|||"); 
+      const res = await api.publishDail({         
+        query: {
+          uid:     that.UID,   //  用户ID
+          content: textarea,    //帖子内容
+          img:     imgs,    //帖子图片【多张图片，用“|||”连接】                                                                              
+          typeid:  that.typeid1,    //顶级栏目ID
+          typeid2: that.navBarTypeList1,    //二级栏目ID 
+          mobile:   that.phoneact,
+          latitude: that.cooRd,    
+          formid:   formId,
+          address:  that.checkAddress,    //用户位置地址   
+          method: "POST"    
+        }
+      });
+      if (res.data.code == 200) {                                    
+        _imgArray = [];
+
+      // 新品时显示
+      if(that.navindex == 100) { 
+        tip.success("发布成功");
+        that.abled = true;
+      }        
+        // wx.navigateBack({                   
+        //     delta:1                                                         
+        // })
+      } 
+      if(res.data.code == 201){
+          tip.error('含有禁用字');        
+      }
+  
+
+  }
+
+  async  bindTextAreaBlur(e){
+      this.textareacell = e.detail.cursor;   
+                       
+  }
+  
+  methods = {  
+    bindFormSubmit(e){
+      let that = this;    
+      let textarea = "";
+      let typeId = wepy.getStorageSync('tyId');
+      let typeId2 = wepy.getStorageSync('tyId2');   
+      let formid = e.detail.formId;
+      if(this.showRemarks){
+        textarea = e.detail.value.content1;
+        textarea = textarea.replace(/(^\s*)|(\s*$)/g, "");
+        console.log(textarea);
+      }else{
+        textarea = e.detail.value.content;
+      } 
+
+
+        
+        if(that.navindex == 12 || that.sortindex == 12) {  
+          tip.error("* 号项为必选项");                   
+        }else if(that.textareacell == 0 || textarea == ""){ 
+          tip.error("文字不能为空");
+        }else{
+          if(_imgArray.length == 0 && that.navindex != 200){
+            tip.error("至少上传一张图片");  
+          }else{ 
+            // 非新品时显示
+            if(that.navindex == 200 && _imgArray.length <2){
+                tip.error("至少上传2张图片");
+                return false; 
+            }
+            if(that.navindex != 100) { 
+              that.checking = true; 
+            }
+            // 倒计时 
+            that.loading = setInterval(() => {
+              that.acountDown--  
+              that.$apply(); 
+                              
+              if(that.acountDown == 0) {  
+                wx.switchTab({
+                  url: '/pages/home'                                                    
+                });
+                clearInterval(that.loading);
+              }  
+            }, 1000); 
+          }
+          that.$apply();
+        }
+      
+
+    if(this.navindex != 100 || this.navindex != 200) { 
+      if(that.textareacell != 0 && _imgArray.length != 0 && that.navindex != 12 && that.sortindex != 12){   
+        this.asyncbindFormSubmit(textarea,formid);
+      }
+    }else{
+        this.asyncbindFormSubmit(textarea,formid);
+        clearInterval(that.loading);
+        if(textarea == "" && this.navindex != 200){
+          tip.error("文字不能为空");
+        }else{
+          wx.switchTab({
+            url: '/pages/home'                                                    
+          });
+        }
+        
+    }
+
+    },
+    getLocate(){}, 
+    //供需菜单切换
+    pubswichNav(e) {
+    this.typeid1 = e.currentTarget.dataset.typeid; 
+    this.navindex = e.currentTarget.dataset.navindex;   
+    if(this.navindex == 100) {
+      this.sortindex = 1; 
+    }                          
+    if(this.navindex == 100 || this.navindex == 200){
+        this.showRemarks = true;
+        this.textareacell = 1;
+         this.navBarTypeList1 = 0;
+         if(this.navindex == 200){   
+            this.navBarTypeList1 = '';
+            this.getSocondlist(this.typeid1);
+         }
+    }else{
+      this.showRemarks = false;
+      this.textareacell = 0;     
+      this.navBarTypeList1 = '';      
+      if(this.typeid = 2) {
+        this.sortindex = 12;
+        this.typeid2 = 12;
+      }    
+      this.getSocondlist(this.typeid1); 
+    }       
+      
+    }, 
+    setSortIndex(e) { 
+      //选择排序方式
+      this.typeid2 = e.currentTarget.dataset.sortid;
+      this.navBarTypeList1 =  e.currentTarget.dataset.sortid;   
+      this.sortindex = e.currentTarget.dataset.sortindex;                             
+      this.sortid = e.currentTarget.dataset.sortid;
+    },
+    backSY() { 
+      wx.switchTab({
+        url: '/pages/home'
+      });
+    },
+    chkMatch() {
+      this.bacInt1 = true;
+      clearInterval(this.loading);
+      if(this.typeid1 == 1) {
+        wx.navigateTo({
+         url: '/pages/supply?typeid=2'
+        })
+      }
+
+      if(this.typeid1 == 2) { 
+        wx.navigateTo({
+          url: '/pages/supply?typeid=1'    
+        })
+      }
+    }
+  }
+ 
+  onUnload() {
+
+     this.bacInt1 = true;
+     clearInterval(this.loading);
+  }
+
+  onLoad(opts) {
+    let that = this;
+    let calore = wepy.getStorageSync(USER_UID);               
+    that.UID =  calore.uid;                                           
+    _imgArray = [];      
+    that.avatarUrl = calore.avatarUrl;
+    that.nickName = calore.nickName; 
+    that.nickAvator = {
+      "nickName": that.nickName,
+      "avatarUrl": that.avatarUrl
+    }
+    that.getNavlist(that.UID);                                          
+    that.showLocate();                                                                                
+    that.getLocate();
+    that.$apply();
+    that.phoneact = 1;                                      
+    that.locatact = 1; 
+    that.abled = false; 
+    that.i++;
+    that.acountDown = 5;
+    that.noUploadImg = true;                         
+  }
+
+   onShow() {                 
+        let setTip = wepy.getStorageSync("getSecondTip"); 
+        if( setTip == true || setTip == '') { 
+            wepy.setStorageSync("getSecondTip", false); 
+        }  
+
+        if( this.bacInt1) {
+        this.loading = setInterval(() => {
+            this.acountDown--  
+            this.$apply(); 
+                            
+            if(this.acountDown == 0) {
+              wx.switchTab({
+                url: '/pages/home'
+              });
+              clearInterval(this.loading);
+            }  
+          }, 1000); 
+
+        }
+        
+   }
+
+}
+</script>
+<style lang="less">
+.cf092{
+  padding:12rpx 12rpx 20rpx 12rpx;
+  background: #F2F2F2;
+  view{
+    margin-top: 10rpx;
+  }
+}
+.remarks{
+  width:80%;
+  line-height: 100%;
+  height:100%;
+}
+.cf091{
+
+  display: inline-block;
+  margin-right: 18rpx;
+  line-height: 15rpx;
+  position: relative;
+  top:7rpx;
+  left:2rpx;
+}
+.r_box{
+  padding:38rpx 0 20rpx;
+  .bz{
+  display:inline-block;
+  vertical-align:top;
+  margin:6rpx 9rpx;
+
+  }
+  image{
+    
+  width:20rpx;
+  height:20rpx; 
+  }
+}
+.PubContiner {
+  width:92%;
+  margin:0 auto;
+}
+.fatip{
+  color:#c7000b;
+  text-align: left;
+  font-size: 26rpx;
+}
+.pubSet {
+  width:100%;
+  margin-top:60rpx;
+  margin-bottom:69rpx;
+  display:inline-block;
+  view {
+    width: 162rpx;
+    background: #f2f2f2;
+    border-radius: 20rpx;
+    font-size: 22rpx;
+    float: left;
+    margin-right: 12rpx;
+    line-height: 50rpx;
+    text-align: center;
+    margin-top: 27rpx;
+  text.active{
+    color: #5d84b4;
+    background-color:#F2F2F2;
+  }  
+  image {
+    width:33rpx;
+    height:33rpx;
+    vertical-align:middle;
+    margin-right:7rpx;
+  }
+  }
+  .pubFabu {
+    width:110rpx;
+    height:72rpx;
+    border:1rpx solid #999999;
+    border-radius:10rpx;
+    font-size:28rpx;
+    color:#666666;
+    text-align:center;
+    line-height:72rpx;
+    float:right;
+    box-sizing:content-box;
+
+    } 
+   button.active{
+      color: #fff;
+      background-color:#c7000b;
+      border-color:#c7000b;
+    }
+
+}
+  .publish{
+    position:relative;
+    height: 100%;
+    .tipGrey{
+      height: 100%;
+    }
+    }
+  .audit{
+    width:86%;
+    height:660rpx;
+    padding:52rpx 52rpx 0;
+    background:#ffffff;
+    border-radius:15px;
+    position:absolute;
+    bottom:-16rpx;
+    background:#fff;
+    text-align: center;
+    z-index:1000;
+    .ac_back{
+      image{
+        width: 34rpx;
+        height: 34rpx; 
+      }
+      text{
+      width:264rpx;
+      height:224rpx;
+      background:url("https://api.fuliaoquan.com/public/images/v1/ico-auditing.png") no-repeat 10rpx center;
+      position:absolute;
+      right:22rpx;
+      bottom:498rpx;
+      z-index:13;
+      border-radius:72rpx;
+
+      }
+    }
+    .ac_red{
+      text-align:center;
+      color:#c7000b;
+      font-size:42rpx;
+      position:absolute;
+      z-index:16;
+      bottom:531rpx;
+      right:240rpx;
+
+      image{
+      width:61rpx;
+      height:59rpx;
+      margin-right:22rpx;
+      margin-bottom:-11rpx;
+
+      }
+    }
+    .acountDown{
+      font-size: 28rpx;
+      margin-bottom: 118rpx;
+    }
+    .ac_title{
+      font-size:32rpx;
+      margin:213rpx 0 30rpx; 
+    }
+    .ac_button{ 
+    display: flex;
+    justify-content: space-between;
+      .ac_btn{ 
+      font-size: 28rpx;
+      width: 184rpx;
+      height: 72rpx;
+      text-align: center;
+      line-height: 70rpx;
+      border-radius:6rpx;
+      border:1rpx solid #CDCDCD;
+      }
+    }
+  }
+</style>
+
+

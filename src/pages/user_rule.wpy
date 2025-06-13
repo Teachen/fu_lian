@@ -1,0 +1,376 @@
+<!--积分规则-->
+<template>
+  <view wx:if="{{!initial}}">
+    <view class="c333 fz30 flex_s" style="width:94%;margin:0 3% 6%;padding-top: 30rpx; height:90rpx;" wx:if="{{detail_id == 22}}">
+      <view>
+        <span style="font-weight: bold;">我的积分</span>：<span class="cf09 fz40" style="position: relative;top:4rpx;">{{score}}</span>
+      </view>
+      <view>
+        <span class="cf09 border_red fz28 p_lrL" style='display: inline-block;margin-right: 18rpx;' wx:if="{{open == 1}}" bindtap = "exchange" data-id= "1"> {{dataScore.record}}</span>
+        <span class="cfff bgc7b fz28 p_lrL border_red" style='display: inline-block;' wx:if="{{open == 1}}" bindtap = "exchange" data-id ="2">{{dataScore.exchange}}</span>
+      </view>
+    </view>
+    <view class="jf_rule" style="padding-bottom: 80rpx;">
+      <import src="../wxParse/wxParse.wxml"/> 
+      <view class="jf_content">
+        <view class="agreement" >
+          <template is="wxParse" data="{{wxParseData:article.nodes}}"/> 
+        </view>
+      </view>
+    </view>
+    <button class="surecard" bindtap="getShare">
+        返回首页
+    </button>
+    <movable-area class="movearea" wx:if="{{detail_id == 22}}" style="height:{{moveableheight}};top: 180rpx;">
+        <movable-view class="backHome" bindtap="goHome"  direction="all"  x="{{x}}" y="{{y}}">
+            <button open-type='contact' session-from="{{nickAvator}}" class="customer" hover-class="none"> 
+              <image src="https://api.fuliaoquan.com/public/images/v1/kefu1.png"/>
+            </button>
+        </movable-view>  
+    </movable-area> 
+  </view>
+  <oPhone :nickAvator.sync="nickAvator" :bindShow2.sync="bindShow2" :sys.sync="sys" @confirmScore.user="consume"></oPhone>
+  <view wx:if="{{initial}}" style='width:100%;margin:0 auto'>
+      <view wx:if="{{type_ex == 1}}">
+          <view wx:if="{{no_detail == 1}}"  class="border_b" wx:for="{{ListP}}" wx:for-item="item" key="idx" index="idx">
+            <view class="flex_s padTB" style='width:91%;margin:0 auto'>
+               <view>
+                  <view class="c333 fz30">{{item.state == 0?'兑换中':item.state == 1?'已兑换':'取消兑换'}}</view>
+                   <view>
+                     <span class="c999 fz24">{{item.pubdate}}</span>
+                   </view>
+               </view>
+               <view class="cf09">-{{item.score}}积分</view>  
+            </view>
+          </view>
+          <view class="c999 fz24 tc padTB" wx:if="{{showDone && no_detail == 1}}">
+            我们是有底线的~~
+          </view>
+          <view class="no_data c666 fz32" style="padding:30% 0 5% 0;" wx:if="{{no_detail == 0}}">
+            <image src="https://api.fuliaoquan.com/public/images/v1/no_detail.png"></image>
+            暂无数据
+          </view>
+      </view>
+      <view wx:if="{{type_ex == 2}}" style='width:91%;margin:0 auto'>
+        <view wx:if = "{{score >=100}}">  
+          <view class="p_tb48">请选择对应的积分兑换套餐。</view>
+          <view class="fz30 c333">
+              <view class="padTB" catchtap = "chose_e" data-score ="100">
+                <image src="{{score<100?src1:v==100?src3:src2}}" class="img18 margin_r"/>
+                20元（100积分）
+              </view>
+              <view class="padTB {{score<200?'cccc':''}}" catchtap = "chose_e" data-score ="200">
+                <image src="{{score<200?src1:v==200?src3:src2}}" class="img18 margin_r"/>
+                40元（200积分）
+              </view>
+              <view class="padTB {{score<300?'cccc':''}}" catchtap = "chose_e" data-score ="300">
+                <image src="{{score<300?src1:v==300?src3:src2}}" class="img18 margin_r"/>
+                60元（300积分）
+              </view>
+              <view class="padTB {{score<400?'cccc':''}}" catchtap = "chose_e" data-score ="400">
+                <image src="{{score<400?src1:v==400?src3:src2}}" class="img18 margin_r"/>
+               
+                80元（400积分）
+              </view>
+              <view class="padTB {{score<500?'cccc':''}}" catchtap = "chose_e" data-score ="500">
+                <image src="{{score<500?src1:v==500?src3:src2}}" class="img18 margin_r"/>
+                100元（500积分）
+              </view>
+              <view class="padTB {{score<1000?'cccc':''}}" catchtap = "chose_e" data-score ="1000">
+               <image src="{{score<1000?src1:v==1000?src3:src2}}" class="img18 margin_r"/>
+               200元（1000积分）
+              </view>
+          </view>
+          <button class="surecard surecard123" hover-class="none" catchtap="exchnage_money" wx:if = "{{chose_is}}">
+              确定
+          </button>
+          <button class="surecard surecard123" hover-class="none" wx:if = "{{!chose_is}}"> 
+              确定
+          </button>
+          <view class="c333 fz30 tc" style="font-weight: bold;">确认后进入客服界面，提现请回复“红包”</view>
+        </view>
+        <view wx:if = "{{score <100}}">
+            <image src="https://api.fuliaoquan.com/public/images/v1/icon_score.png" class="img62" style="margin:102rpx auto 34rpx auto;display: block;"/>
+            <view style="position: relative;" class="tc">
+              <span>当前可兑换积分不足</span>
+              <button open-type='contact' session-from="{{nickAvator}}" class="surecard surecard123" hover-class="none"> 
+               联系客服
+              </button>
+            </view>
+        </view>
+      </view>
+  </view>
+</template>
+<script>
+import wepy from 'wepy';
+import api from '@/api/api'; 
+import tip from '@/utils/tip';  
+import WxParse from '@/wxParse/wxParse';
+import oPhone from "@/components/ophone";  
+import { 
+  SYSTEM_INFO,
+  USER_SPECICAL_INFO,           
+  USER_INFO,
+  USER_UID
+} from '@/utils/constant';
+const url = "https://api.fuliaoquan.com/public/images/v1/";
+export default class UserRule extends wepy.page {
+
+  config = {
+    navigationBarTitleText: '详情',
+    navigationBarBackgroundColor: '#F2F2F2'            
+  }
+  components = {   
+    oPhone: oPhone
+  }
+
+  data = {
+    moveableheight:  692,
+      x: 330, 
+      y: 456,
+      nickAvator:{},
+      agreeMent: "",
+      detail_id: 15,
+      initial:false,
+      chose_is:false,
+      bindShow2:false,
+      ListP:{},
+      showDone:false,
+      no_detail:0,
+      UID:0,
+      page_total:0,
+      sys:'',
+      currentPage:1,
+      type_ex:9,
+      src1:'https://api.fuliaoquan.com/public/images/v1/icon_score1.png',
+      src2:'https://api.fuliaoquan.com/public/images/v1/icon_score2.png',
+      src3:'https://api.fuliaoquan.com/public/images/v1/icon_score3.png',
+      num:0,
+      v:0,
+      open:0,
+      score:0,
+      dataScore:{}
+    }
+
+  async agreeMent(cid) { 
+    let that = this;    
+    let calore = wepy.getStorageSync(USER_UID);   
+    const res = await api.getCeListDel({       
+
+    query: { 
+        uid: calore.uid, 
+        id: cid || 15,   
+        method: "POST"  
+    }
+    }); 
+
+    if(res.data.code == 200) {  
+        that.helpcenter = res.data.data[0].info;   
+        WxParse.wxParse('article', 'html', that.helpcenter, this, 5);   
+        that.$apply();     
+    }
+  }
+
+  async UserScore() {
+    let that = this;
+      const json = await api.UserScore({
+        query: {
+          uid:that.UID,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        that.score = json.data.data.integral;
+        that.dataScore = json.data.data;
+        that.open = json.data.data.open;
+         that.$apply();
+      }
+  } 
+
+  async consume1() {
+    let that = this;
+        this.bindShow2 = false;
+      const json = await api.GiftExchange({
+        query: {
+          uid:that.UID,
+          num:this.num,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+         tip.success(json.data.msg) 
+         that.$apply();
+      }
+  } 
+  
+  async ex_list() {
+    let that = this;
+        this.bindShow2 = false;
+      const json = await api.GiftList({
+        query: {
+          uid:that.UID,
+          page:this.currentPage || 1,
+          size:11,
+          method:"POST"
+        }
+      });
+      if(json.data.code == 200) {
+        console.log(json.data);
+        this.ListP =[...that.ListP,...json.data.data.list];
+        that.page_total = json.data.data.total;
+
+        // 判断数据是否为空
+        if(this.ListP.length>=1){
+            this.no_detail = 1;
+        }else{
+            this.no_detail = 0;
+        }
+   
+        this.$apply();
+        tip.loaded();
+      } else {
+        tip.error(json.data.msg);
+      }
+  } 
+
+  //加载更多
+  onReachBottom() {
+    let that = this;
+    // that.showLoading = true;
+    if(that.page_total <= that.currentPage){
+        that.showDone = true;
+        console.log("加载完了");
+    }
+
+    //判断总页数是否大于翻页数
+    if ((that.page_total) > that.currentPage) {
+      //防止重复加载
+      if (that.preventRepeatReuqest) {
+        return true;
+      }
+      that.preventRepeatReuqest = true;
+      that.currentPage++;
+      that.ex_list(that.currentPage);
+      that.preventRepeatReuqest = false;
+    }
+  }
+
+  onLoad(option) {
+    let that = this;
+    this.detail_id = option.id;
+    this.agreeMent(this.detail_id);
+    let userInfo = wepy.getStorageSync(USER_UID);
+    that.avatarUrl = userInfo.avatar;
+    that.nickName = userInfo.oauth_name; 
+    that.nickAvator = {
+      "nickName": that.nickName,
+      "avatarUrl": that.avatarUrl
+    }
+    that.nickAvator = JSON.stringify(that.nickAvator);
+    wx.getSystemInfo({
+        success:function(res){
+        let sys = res.system;
+        sys = sys.replace(/[^a-z]/ig, "");
+        console.log(sys)
+        that.sys = sys;
+        let windowHeight = (res.windowHeight * (750 / res.windowWidth)); 
+        let statusBarHeight = (res.statusBarHeight * ( 750 / res.windowWidth));//将高度乘以换算后的该设备的rpx与px的比例 
+        // 可使用窗口宽度、高度 
+        that.moveableheight =  ( windowHeight - statusBarHeight -62) + 'rpx'                                                          
+        if(res.windowHeight > 672){
+        that.moveableheight =  ( windowHeight - statusBarHeight -9) + 'rpx' 
+        }
+        }
+    }) 
+    this.$apply(); 
+  }
+
+  methods = {
+    getShare(){
+       wepy.switchTab({
+          url: '/pages/home'                                                        
+        })
+    },
+    exchange(e){
+      this.initial = true;
+      this.type_ex = e.currentTarget.dataset.id;
+      if(this.type_ex == 1){
+        this.ex_list();
+      }
+      
+    },
+    chose_e(e){
+      let d_score = e.currentTarget.dataset.score;
+      this.num = d_score/5;
+      if(this.score >= d_score){
+          this.v = d_score;
+          this.chose_is = true;
+          this.$apply();
+      }
+    },
+    exchnage_money(){
+      this.bindShow2 = true;
+      this.$apply();
+    },
+    consume(){
+      this.consume1();
+    }
+  }
+  onShow(){ 
+    let that = this;
+    let sys_id = wepy.getStorageSync(USER_UID);
+    that.UID = sys_id.uid;
+    that.UserScore();
+    if(sys_id.uid == null){
+         wx.navigateTo({
+          url: '/pages/authorize'                                           
+        })  
+    }
+  }
+
+  //小程序分享
+  onShareAppMessage(res) {    
+    wx.showShareMenu({
+      withShareTicket: true 
+    })
+    return {
+
+        title:"辅料圈",
+        path:'/pages/user_rule?id='+this.detail_id,
+    } 
+  } 
+
+}
+
+</script>
+<style lang="less">
+@import "../wxParse/wxParse.wxss";
+  .agreement{
+    width:94%;
+    margin:0 3% 6%; 
+  } 
+  .backHome{ 
+        position:fixed;
+        bottom:386rpx;
+        right:138rpx;
+        z-index:999;
+        overflow: visible;
+        image{
+        width:122rpx;
+        height:120rpx; 
+        } 
+    }
+    .customer{
+      background: transparent;
+      padding:0 !important;
+      overflow: visible; 
+    }
+    .surecard123{
+      bottom:0rpx;
+      position: relative;
+      width:100%;
+      left:0;
+      margin-left: 0;
+      margin:60rpx 0 28rpx 0;
+    }
+</style>

@@ -1,0 +1,476 @@
+<template>
+
+  <scroll-view class="cellContent" scroll-y scroll-with-animation="true"> 
+    <!-- 拨打电话弹窗  -->                   
+   <oPhone :callNum.sync="bindCallNum" :bindShow.sync="bindCallShow" :bindTel.sync="bindCallTel" :bindScore.sync="bindCallScore" :score.sync="scoreCall" :ample.sync = "ampleCall" @confirmScore.user="parentCSco"></oPhone>
+    <view class="sorNav"> 
+      <text wx:for="{{navBarType}}" wx:key="nInx" class="{{navindex==index? 'active' : ''}}"
+      data-typeid = "{{item.id}}" bindtap="swichNav"  data-navindex="{{index}}">{{item.title}}</text>
+    </view>   
+
+    <view class="noDatabox" wx:if="{{nocellCont}}"> 
+      <image src="https://api.fuliaoquan.com/public/images/v1/no_detail.png"/>
+      <view class="text"> 暂无信息 </view>
+      <view  class="BackHom" @tap="backHome"> 
+       返回首页 
+       </view>
+    </view>
+    <!-- 纽扣列表模块渲染 -->
+        <block  wx:for="{{cellCont}}" wx:for-item="itemCell" wx:key="item.value" wx:for-index="index">                               
+        <view class="cellList">     
+        <view class="celltable">
+          <view class="cellLeft">
+            <navigator url="/pages/avator" hover-class="none"                             
+            url="/pages/avator?uid={{itemCell.user.id}}"> 
+              <image src="{{itemCell.user.avatar}}"/>
+            </navigator>              
+          </view>
+          <view class="cellRight">                                                                                                                 
+            <view class="cellTop">                              
+              <view class="cellTopL">                                                                                  
+              <text>{{itemCell.user.name}}</text>                                   
+              <view class="topLi">                         
+                <navigator  hover-class="none" target="self">                  
+                    {{itemCell.type.typeid2_title}}
+                </navigator>                      
+              </view>                                           
+              </view>    
+                 <view class="icophone" bindtap="checkScore" wx:if="{{itemCell.user.tel != ''}}" data-call="{{itemCell.user.tel}}" data-uid="{{itemCell.user.id}}">                                      
+                  <image src="https://api.fuliaoquan.com/public/images/v3/ico-phone.png"/>    
+                </view>      
+             </view> 
+          </view>
+                  <view style="clear:both;"></view>         
+                  <navigator url="/pages/postDetail" hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{itemCell.id}}&uid={{UID}}">                                 
+                  <view  class="cellmain" bindtap="dispInput">                                                        
+                          <text>{{itemCell.content}}</text>               
+                  </view>                 
+                  </navigator>                                                                                                                
+                  <view class="cellMainList flex_f cellDetail" data-imgurl = "{{itemCell.img}}"  @tap = "privewImgUrl">
+                    <repeat wx:for="{{itemCell.img}}"  wx:for-item="tpitem" wx:key="{{tpitem.value}}">    
+                      <view class="size {{!item.loaded?'bg':null}}">   
+                      <image class="fade_in" src= "{{true ? tpitem: 'https://api.fuliaoquan.com/public/images/v3/ico-noneImg.png'}}"
+                       data-index="{{index}}"  data-src="{{tpitem}}" @tap="mag" data-tzd="{{itemCell.id}}"/>                            
+                      </view>  
+                                   
+                    </repeat>  
+                  </view>  
+                  <view class="cellMap" bindtap="map({{itemCell.latitude[0]}},{{itemCell.latitude[1]}})">              
+                    <image src="https://api.fuliaoquan.com/public/images/v3/ico-maps.png" wx:if="{{itemCell.address != ''}}"/>                                    
+                    {{itemCell.address}}
+                    <view class="celltime"> {{itemCell.pubdate}} </view>                          
+                  </view> 
+                  <view style="clear:both;"></view>  
+        </view>         
+                 <view class="comment flex_s"> 
+                    <view class="commentLi"> 
+                    <navigator  hover-class="none" url="/pages/postDetail?scene=undefined&a=1&id={{itemCell.id}}&uid={{UID}}&showSned=0">                                        
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-comment.png" style="width:28rpx;height:28rpx;"/>                                                                       
+                      <text>私信</text>                                                                                 
+                    </navigator>   
+                    </view>              
+                    <view class="commentLi">
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-see.png"/>                                                                                                 
+                      <text>{{itemCell.click}}</text>
+                    </view> 
+                 
+                     <view class="commentLi" @tap="likes"  data-id="{{itemCell.id}}" data-num='{{itemCell.likes}}'>
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart.png" wx:if="{{itemCell.is_likes == 0}}"/>
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-heart-active.png" wx:if="{{itemCell.is_likes ==1}}" />      
+                      <text>{{itemCell.likes}}</text>                         
+                    </view>  
+                    <view class="commentLi" style="border-right:none;" @tap="collect"  data-id = "{{itemCell.id}}" data-num='{{itemCell.collect}}'>      
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-star-active.png"  wx:if="{{itemCell.is_collect == 1}}"/>
+                      <image src="https://api.fuliaoquan.com/public/images/v3/ico-star.png"  wx:if="{{itemCell.is_collect == 0}}"/> 
+                      <text>{{itemCell.collect}}</text>   
+                    </view>  
+                  </view>  
+    <view style="clear:both;"></view>
+    <view style="width:780rpx;height:12rpx;background-color:#F2F2F2;margin-left:-60rpx;"></view>
+    </view>  
+    </block>  
+  </scroll-view> 
+  <view class="no_data c666 fz32" wx:if="{{showDone}}">
+      我们是有底线的~~
+  </view>
+</template>
+<script>
+import wepy from "wepy";
+import api from "@/api/api";                                  
+import tip from "@/utils/tip";
+import oPhone from "@/components/ophone";
+  
+import {  
+  SYSTEM_INFO,
+  SEL_CLASS_CODE,
+  USER_SPECICAL_INFO,
+  USER_UID,
+  USER_INFO
+} from '@/utils/constant'; 
+var typeTilte = [];
+export default class Require extends wepy.page {
+  config = {
+    navigationBarTitleText: "拉链",
+    navigationBarBackgroundColor: '#F2F2F2'
+  };  
+  data = {
+    nocellCont:false,//页面无数据
+    cellCont:{},
+    showSned:1,
+    typeid: 1,
+    typeid2:3,
+    typeid2_title: [],
+    navBarType:[],// 顶级菜单栏目 
+    navindex: 0, //排序索引 
+    optionUid: 592,                         
+    optionId: 20, 
+    init: 0,
+    bindCallShow:false,
+    bindCallNum: 18859598689,
+    bindCallTel:0,
+    bindCallScore:0,
+    ampleCall:false,
+    scoreCall:0,
+    uidT:0,
+    privewImgUrlList: "",   
+    //当前页面
+    currentPage: 1,
+    // 总页数
+    page_total:0,
+    UID:0,//用户ID
+    Comtent: '', //帖子回复
+    //是否收藏
+    is_collect:0,
+    //是否点赞
+    is_likes:0,
+    showSned:1,
+    navBarTypeList: []
+  } 
+  components = {
+    oPhone: oPhone
+  };
+  // 获取纽扣信息列表 
+  async getCelList(optionUid,tyPeid,tyname,curpg){  
+
+    let that = this; 
+    const res = await api.getCeList({     
+      query: {
+        typeid: tyPeid,             
+        typename: tyname,
+        page: curpg,                                                                                                                                      
+        uid: optionUid,                                                  
+        method:"POST",        
+      }
+    });
+    if (res.data.code == 200) { 
+      let data = res.data.data.list;      
+      that.cellCont = [...that.cellCont,...res.data.data.list];                             
+      that.page_total = res.data.data.total;  
+      if(data == ''){
+        that.nocellCont = true;
+      }            
+      that.$apply();                                                         
+     }
+    if(res.data.code == 201 ) {
+        this.nocellCont = true; 
+        this.no_detail = 0;
+     }
+    
+    }
+
+  async getNavlist(uId){
+    let that = this;    
+    const res = await api.getNavList1({     
+      query: {
+        uid: uId,
+        method:"POST"
+      }
+    });   
+    if (res.data.code == 200) { 
+      let data = res.data.data;     
+      that.navBarType = data;                 
+    } 
+    that.$apply();        
+    }
+    
+    async count(src,tz){
+
+        const json = await api.GetPicClick({
+              query:{
+                uid:this.UID, 
+                id:tz,
+                pic:src,
+                method:"POST"                    
+              }
+            });                                                        
+            if (json.data.code == 200) {
+                console.log("统计成功");
+            } else {
+                console.log("失败");
+            }
+            this.$apply();
+    }
+    async show(imgList){
+
+        let current = this.privewImgUrlList;  
+        let tzd = this.tz; 
+        this.count(current,tzd);   
+        
+        let imageArry = [];                                                  
+        let obj = imgList;                 
+        Object.keys(obj).forEach((item) => {        
+          imageArry.push(obj[item])
+        });
+
+        wx.previewImage({
+          current: current, // 当前显示图片的http链接
+          urls: imageArry, // 需要预览的图片http链接列表
+        })
+    }
+    async checkScore(e) {
+    let that = this;
+    let uidT = e.currentTarget.dataset.uid;
+    that.uidT = uidT; 
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:uidT,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) { 
+        that.bindCallScore = 0;
+        that.ampleCall = true;
+        that.bindCallShow = false; 
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      } else if(json.data.code == 201){
+        that.bindCallShow = true;  
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = true;
+        this.$apply();   
+      }else if(json.data.code == 202){
+        that.bindCallShow = true;  
+        that.scoreCall = json.data.data.integral;
+        that.bindCallTel = 0;
+        that.bindCallScore = 1;
+        that.ampleCall = false;
+        this.$apply();
+      }
+  }
+  async parentCSco1(){
+    let that = this;
+    that.bindCallShow = true;                        
+      const json = await api.GetMobile({
+        query: {
+          uid:this.UID,
+          uid2:this.uidT,
+          type:1,
+          method:"POST"
+        }
+      });
+    if (json.data.code == 200) {
+        // that.bindCallTel = 1;
+        that.bindCallScore = 0;
+        that.bindCallShow = false;
+        that.ampleCall = true;
+        this.bindCallNum = json.data.data.tel;
+        wx.makePhoneCall({                                                    
+          phoneNumber: this.bindCallNum
+        });
+        this.$apply();   
+      }
+  }
+  methods = {
+    parentCSco(){
+      this.parentCSco1();
+    },     
+        map(la,lo){ // 地图 
+                wx.navigateTo({
+                  url: '/pages/map2?la='+la+'&lo='+lo
+                })
+        },
+        likes(t){
+          let that = this;
+            var a = this, n = a.data.cellCont,i = t.currentTarget.dataset.id, 
+            e = (
+            Number(t.currentTarget.dataset.num),                        
+            function(e) {
+                n[e].id == i && (
+                  // that.Likes2(a,n,i,e)
+                  wx.request({
+                    url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetLikes',
+                    cachetime: "0",
+                    method:'post',
+                    data: {id: i, record:1,uid: that.optionUid}, 
+                    header: {'Content-Type':  'application/x-www-form-urlencoded'},
+                    success: (t)=>{ 
+                    n[e].is_likes = (t.data.data.is_likes==0) ? 1 : 1;
+                    n[e].likes = (t.data.data.is_likes==0) ? Number(n[e].likes) : Number(n[e].likes)+1;
+                      
+                    if(t.data.data.is_likes==0){
+                      tip.error(t.data.msg);
+                    }else{
+                      tip.success(t.data.msg);
+                    }
+
+                    // that.cellCont = n;
+                    a.setData({cellCont: n});       
+                    }
+                    })
+                  );
+                }
+                );
+                for (var o in n) e(o);
+              },
+          collect(t){
+            let that = this;
+            var a = this, n = a.data.cellCont,i = t.currentTarget.dataset.id, 
+            e = (
+            Number(t.currentTarget.dataset.num),                       
+            function(e) {
+                n[e].id == i && (
+                  wx.request({
+                    url: 'https://api.fuliaoquan.com/api/v1/Invitation/GetCollect',
+                    cachetime: "0",
+                    method:'post',
+                    data: {id: i, uid: that.optionUid},
+                    header: {'Content-Type':  'application/x-www-form-urlencoded'},                                         
+                    success: (t)=>{ 
+                    n[e].is_collect = (t.data.data.is_collect==0) ? 1 : 1;
+                    n[e].collect = (t.data.data.is_collect==0) ? Number(n[e].collect) : t.data.data.total;
+
+                    if(t.data.data.is_collect==0){
+                      tip.error(t.data.msg);
+                    }else{
+                      tip.success(t.data.msg);
+                    }
+
+                    a.setData({cellCont: n});
+                    }
+                })
+              );
+            }
+            );
+            for (var o in n) e(o);
+	    
+        },
+        inputs(e){
+        this.Comtent = e.detail.value;
+        },
+        makePhoneCall(e) {
+        let callNum = e.currentTarget.dataset.call;                                                                             
+        this.bindCallNum = e.currentTarget.dataset.call;            
+        this.bindCallShow = true; 
+        this.$root.$apply();                                            
+        },
+        backHome(){
+             wepy.switchTab({
+              url: '/pages/home'                                                        
+            });  
+        },
+        mag(e){
+         this.privewImgUrlList = e.currentTarget.dataset.src;
+         this.tz = e.currentTarget.dataset.tzd;
+        },
+        privewImgUrl(e){
+          let imgList = e.currentTarget.dataset.imgurl;
+        
+          this.show(imgList);
+        },
+      /**
+       * 点击tab切换            
+       */
+      swichNav(e) {    
+        let that = this;
+        that.showfilter = true; 
+        if (this.data.navindex == e.target.dataset.index) {                          
+          return false;                                               
+        } else {                                                                        
+          const dataset = e.currentTarget.dataset;                
+          this.typeid = dataset.typeid;
+          this.noDatail = false;
+          this.nocellCont = false;
+          this.cellCont = [];
+
+          this.getCelList(this.optionUid,this.typeid,this.typeid2_title,this.currentPage);                        
+          that.navindex = dataset.navindex;
+          that.$apply();
+        }
+      },
+      //分页加载
+      onReachBottom() { 
+        let that = this; 
+        if(that.page_total == that.currentPage){
+            that.showDone = true;
+        }
+
+        //判断总页数是否大于翻页数
+        if ((that.page_total) > that.currentPage) {
+            that.currentPage++;
+            that.getCelList(that.optionUid,that.typeid,that.typeid2_title,that.currentPage);                        
+        }       
+      }
+    }         
+    onLoad(option){ 
+        let calore = wepy.getStorageSync(USER_UID);
+        this.UID  = calore.uid;
+        if(this.init == 0){
+          this.optionUid = option.uid;
+          this.typeid2_title = option.typeid2_title;
+          this.is_collect = 0;  
+          this.is_likes = 0;
+        }
+        this.getCelList(this.optionUid,1,this.typeid2_title,this.currentPage); 
+        this.getNavlist(this.optionUid);
+        wepy.setNavigationBarTitle({ title: this.typeid2_title });  //动态改变标题栏
+        
+        tip.loading();                   
+        this.Comtent ="";
+        this.$apply();      
+    }
+   onShow() {                 
+        let setTip = wepy.getStorageSync("getSecondTip"); 
+        if( setTip == true || setTip == '') { 
+            wepy.setStorageSync("getSecondTip", false); 
+        } 
+
+   }
+}
+</script>
+<style lang="less">
+
+  .sorNav{
+      width:100%;
+      height:95rpx;
+      line-height:92rpx;
+      margin-left:111rpx;
+    text{
+      width:34%;
+      text-align:center;
+      font-size:28rpx;
+      display:inline-block;
+    }
+    text.active{
+      color:#C7000B;
+      position:relative;
+    }
+    .active::after {
+      content: "";
+      position: absolute;
+      bottom: 20rpx;
+      left: 100rpx;
+      display: inline-block;
+      width: 26rpx;
+      height: 6rpx;
+      border-radius: 30%;
+      background-color: #c7000b;
+    }
+  }
+  
+</style>
